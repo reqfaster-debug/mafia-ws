@@ -110,12 +110,20 @@ io.on('connection', (socket) => {
 });
 
 // Раскрытие характеристики
+// Раскрытие характеристики
 socket.on('reveal_characteristic', async ({ lobbyId, playerId, field }) => {
     try {
+        console.log(`🔓 reveal_characteristic: ${lobbyId}, ${playerId}, ${field}`);
         const lobby = await lobbyManager.revealCharacteristic(lobbyId, playerId, field);
+        
+        // Отправляем событие о раскрытии
         io.to(lobbyId).emit('characteristic_revealed', { playerId, field });
+        
+        // Отправляем обновленное состояние лобби
         io.to(lobbyId).emit('lobby_state', lobby);
+        
     } catch (error) {
+        console.error('❌ reveal_characteristic error:', error);
         socket.emit('error', { message: error.message });
     }
 });
@@ -409,27 +417,56 @@ async function start() {
 
 
 // В server.js после создания папки data
-async function cleanupCorruptedLobbies() {
+async function repairCorruptedLobbies() {
     const dataDir = path.join(__dirname, 'data');
-    const files = await fs.readdir(dataDir);
-    
-    for (const file of files) {
-        if (file.startsWith('lobby_') && file.endsWith('.json')) {
-            const filePath = path.join(dataDir, file);
-            try {
-                const data = await fs.readFile(filePath, 'utf8');
-                JSON.parse(data); // Проверяем валидность
-            } catch (e) {
-                console.log(`🧹 Removing corrupted lobby: ${file}`);
-                const backupPath = filePath + '.corrupted.' + Date.now();
-                await fs.rename(filePath, backupPath);
+    try {
+        const files = await fs.readdir(dataDir);
+        let repaired = 0;
+        
+        for (const file of files) {
+            if (file.startsWith('lobby_') && file.endsWith('.json')) {
+                const filePath = path.join(dataDir, file);
+                try {
+                    const data = await fs.readFile(filePath, 'utf8');
+                    JSON.parse(data); // Проверяем валидность
+                } catch (e) {
+                    console.log(`🔧 Repairing corrupted file: ${file}`);
+                    
+                    // Пытаемся восстановить
+                    const cleanData = data
+                        .replace(/^\uFEFF/, '')
+                        .replace(/\0/g, '')
+                        .replace(/[^\x20-\x7E\n\r\t{}[\]:,"]+/g, '')
+                        .trim();
+                    
+                    const lastBrace = cleanData.lastIndexOf('}');
+                    if (lastBrace > 0) {
+                        const fixed = cleanData.substring(0, lastBrace + 1);
+                        try {
+                            JSON.parse(fixed);
+                            await fs.writeFile(filePath, fixed, 'utf8');
+                            repaired++;
+                            console.log(`✅ Repaired: ${file}`);
+                        } catch (parseError) {
+                            // Если не получается восстановить, удаляем
+                            const backupPath = filePath + '.corrupted.' + Date.now();
+                            await fs.rename(filePath, backupPath);
+                            console.log(`🗑️ Moved corrupted file to backup: ${path.basename(backupPath)}`);
+                        }
+                    }
+                }
             }
         }
+        
+        if (repaired > 0) {
+            console.log(`🔧 Repaired ${repaired} corrupted lobby files`);
+        }
+    } catch (error) {
+        console.error('Error repairing lobbies:', error);
     }
 }
 
-// Вызовите после создания папки
-await cleanupCorruptedLobbies();
-
+// Вызовите после создания папки data
+await repairCorruptedLobbies();
 
 start();
