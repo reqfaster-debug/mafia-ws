@@ -3,10 +3,6 @@ const router = express.Router();
 const lobbyManager = require('../logic/lobbyManager');
 
 router.post('/create', async (req, res) => {
-    console.log('📥 POST /api/lobby/create');
-    console.log('Headers:', req.headers);
-    console.log('Body:', req.body);
-    
     try {
         const { nickname } = req.body;
         
@@ -15,7 +11,6 @@ router.post('/create', async (req, res) => {
         }
 
         const { lobbyId, hostId } = await lobbyManager.createLobby(nickname);
-        console.log(`✅ Lobby created: ${lobbyId}`);
         
         res.json({
             lobbyId,
@@ -23,7 +18,6 @@ router.post('/create', async (req, res) => {
             url: `/lobby.html?id=${lobbyId}`
         });
     } catch (error) {
-        console.error('❌ Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
