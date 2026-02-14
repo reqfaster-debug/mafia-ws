@@ -35,7 +35,6 @@ class LobbyManager {
         const filePath = path.join(__dirname, '..', 'data', `lobby_${lobbyId}.json`);
         try {
             const data = await fs.readFile(filePath, 'utf8');
-            // Очищаем данные от возможных невидимых символов
             const cleanData = data.replace(/^\uFEFF/, '').trim();
             return JSON.parse(cleanData);
         } catch (error) {
@@ -44,24 +43,18 @@ class LobbyManager {
         }
     }
 
+    // Упрощенное сохранение без временного файла
     async saveLobby(lobbyId, lobby) {
         const filePath = path.join(__dirname, '..', 'data', `lobby_${lobbyId}.json`);
-        const tempPath = filePath + '.tmp';
-        
         try {
-            // Сначала пишем во временный файл
-            await fs.writeFile(tempPath, JSON.stringify(lobby, null, 2));
-            // Затем атомарно переименовываем
-            await fs.rename(tempPath, filePath);
+            await fs.writeFile(filePath, JSON.stringify(lobby, null, 2));
             console.log(`💾 Lobby saved: ${lobbyId}`);
         } catch (error) {
             console.error(`❌ Error saving lobby ${lobbyId}:`, error);
-            try { await fs.unlink(tempPath); } catch (e) {}
             throw error;
         }
     }
 
-    // МЕТОД START GAME - ВОТ ОН!
     async startGame(lobbyId, gameDataFromClient) {
         console.log(`🎮 LobbyManager.startGame: ${lobbyId}`);
         
@@ -103,25 +96,22 @@ class LobbyManager {
         await this.saveLobby(lobbyId, lobby);
         console.log(`✅ Game started in ${lobbyId}`);
         
-        return lobby; // Возвращаем весь lobby
+        return lobby;
     }
 
     async validateGenders(players) {
         const genders = players.map(p => p.character.gender);
         
-        // Проверяем наличие мужского пола
         if (!genders.includes("Мужской")) {
             const randomPlayer = players.find(p => p.character.gender !== "Женский");
             if (randomPlayer) randomPlayer.character.gender = "Мужской";
         }
         
-        // Проверяем наличие женского пола
         if (!genders.includes("Женский")) {
             const randomPlayer = players.find(p => p.character.gender !== "Мужской");
             if (randomPlayer) randomPlayer.character.gender = "Женский";
         }
         
-        // Ограничиваем трансформеров (максимум 1)
         const transformerCount = genders.filter(g => g === "Трансформер").length;
         if (transformerCount > 1) {
             const transformerPlayers = players.filter(p => p.character.gender === "Трансформер");
