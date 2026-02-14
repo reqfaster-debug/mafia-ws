@@ -143,49 +143,50 @@ async saveLobby(lobbyId, lobby) {
     }
 }
 
-    async startGame(lobbyId, gameDataFromClient) {
-        console.log(`🎮 LobbyManager.startGame: ${lobbyId}`);
-        
-        const lobby = await this.getLobby(lobbyId);
-        
-        if (lobby.players.length < 6) {
-            throw new Error('Нужно минимум 6 игроков для старта');
-        }
-        
-        // Генерируем персонажей
-        for (const player of lobby.players) {
-            player.character = gameGenerator.generateCharacter(gameDataFromClient.playersData);
-            player.revealedCharacteristics = [];
-        }
-        
-        // Проверяем пол
-        await this.validateGenders(lobby.players);
-        
-        // Места в бункере (50%, округление вниз)
-        const bunkerSpaces = Math.floor(lobby.players.length * 0.5);
-        
-        // Выбираем случайную катастрофу и бункер
-        const randomCatIndex = Math.floor(Math.random() * gameDataFromClient.catastrophes.length);
-        const randomBunkerIndex = Math.floor(Math.random() * gameDataFromClient.bunkers.length);
-        
-        const catastrophe = gameDataFromClient.catastrophes[randomCatIndex];
-        const bunker = gameDataFromClient.bunkers[randomBunkerIndex];
-        
-        lobby.gameData = {
-            catastrophe: catastrophe,
-            bunker: {
-                ...bunker,
-                spaces: bunkerSpaces
-            }
-        };
-        
-        lobby.status = 'playing';
-        
-        await this.saveLobby(lobbyId, lobby);
-        console.log(`✅ Game started in ${lobbyId}`);
-        
-        return lobby;
+   async startGame(lobbyId, gameDataFromClient) {
+    console.log(`🎮 LobbyManager.startGame: ${lobbyId}`);
+    
+    const lobby = await this.getLobby(lobbyId);
+    
+    if (lobby.players.length < 6) {
+        throw new Error('Нужно минимум 6 игроков для старта');
     }
+    
+    // Генерируем персонажей
+    for (const player of lobby.players) {
+        player.character = gameGenerator.generateCharacter(gameDataFromClient.playersData);
+        player.revealedCharacteristics = [];
+        console.log(`Player ${player.nickname} character:`, player.character);
+    }
+    
+    // Проверяем пол
+    await this.validateGenders(lobby.players);
+    
+    // Места в бункере (50%, округление вниз)
+    const bunkerSpaces = Math.floor(lobby.players.length * 0.5);
+    
+    // Выбираем случайную катастрофу и бункер
+    const randomCatIndex = Math.floor(Math.random() * gameDataFromClient.catastrophes.length);
+    const randomBunkerIndex = Math.floor(Math.random() * gameDataFromClient.bunkers.length);
+    
+    const catastrophe = gameDataFromClient.catastrophes[randomCatIndex];
+    const bunker = gameDataFromClient.bunkers[randomBunkerIndex];
+    
+    lobby.gameData = {
+        catastrophe: catastrophe,
+        bunker: {
+            ...bunker,
+            spaces: bunkerSpaces
+        }
+    };
+    
+    lobby.status = 'playing';
+    
+    await this.saveLobby(lobbyId, lobby);
+    console.log(`✅ Game started in ${lobbyId}`);
+    
+    return lobby;
+}
 
     async validateGenders(players) {
         const genders = players.map(p => p.character.gender);
@@ -211,10 +212,14 @@ async saveLobby(lobbyId, lobby) {
 
 async revealCharacteristic(lobbyId, playerId, field) {
     try {
+        console.log(`🔓 Reveal characteristic request: ${lobbyId}, ${playerId}, ${field}`);
         const lobby = await this.getLobby(lobbyId);
         const player = lobby.players.find(p => p.id === playerId);
         
         if (player) {
+            console.log(`Found player: ${player.nickname}`);
+            console.log(`Current revealedCharacteristics:`, player.revealedCharacteristics);
+            
             if (!player.revealedCharacteristics) {
                 player.revealedCharacteristics = [];
             }
@@ -222,7 +227,12 @@ async revealCharacteristic(lobbyId, playerId, field) {
                 player.revealedCharacteristics.push(field);
                 await this.saveLobby(lobbyId, lobby);
                 console.log(`🔓 Characteristic revealed: ${playerId}.${field}`);
+                console.log(`Updated revealedCharacteristics:`, player.revealedCharacteristics);
+            } else {
+                console.log(`Characteristic already revealed`);
             }
+        } else {
+            console.log(`Player not found: ${playerId}`);
         }
         return lobby;
     } catch (error) {
