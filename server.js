@@ -92,20 +92,21 @@ io.on('connection', (socket) => {
     });
 
     // Старт игры
-    socket.on('start_game', async ({ lobbyId, gameDataFromClient }) => {
-        try {
-            console.log(`📥 start_game: ${lobbyId}`);
-            
-            const lobby = await lobbyManager.startGame(lobbyId, gameDataFromClient);
-            
-            io.to(lobbyId).emit('game_started', lobby.gameData);
-            io.to(lobbyId).emit('lobby_state', lobby);
-            
-        } catch (error) {
-            console.error('❌ start_game error:', error);
-            socket.emit('error', { message: error.message });
-        }
-    });
+socket.on('start_game', async ({ lobbyId, gameDataFromClient }) => {
+    try {
+        console.log(`📥 start_game: ${lobbyId}`);
+        console.log('🔥 gameDataFromClient:', JSON.stringify(gameDataFromClient, null, 2));
+        
+        const lobby = await lobbyManager.startGame(lobbyId, gameDataFromClient);
+        
+        io.to(lobbyId).emit('game_started', lobby.gameData);
+        io.to(lobbyId).emit('lobby_state', lobby);
+        
+    } catch (error) {
+        console.error('❌ start_game error:', error);
+        socket.emit('error', { message: error.message });
+    }
+});
 
     // Раскрытие характеристики (ОДИН обработчик, а не два!)
     socket.on('reveal_characteristic', async ({ lobbyId, playerId, field }) => {

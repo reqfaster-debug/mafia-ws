@@ -145,6 +145,7 @@ async saveLobby(lobbyId, lobby) {
 
   async startGame(lobbyId, gameDataFromClient) {
     console.log(`🎮 LobbyManager.startGame: ${lobbyId}`);
+    console.log('🔥 playersData:', gameDataFromClient.playersData);
     
     const lobby = await this.getLobby(lobbyId);
     

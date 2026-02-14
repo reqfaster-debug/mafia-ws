@@ -26,42 +26,64 @@ class GameGenerator {
     }
 
     generateCharacter(playersData) {
-        const age = this.generateAge();
-        const gender = this.generateGender();
-        const healthSeverity = this.generateHealthSeverity();
-        const experience = this.generateExperience(age);
-        
-        // Выбираем случайные значения из массивов
-        const trait = playersData.traits[Math.floor(Math.random() * playersData.traits.length)];
-        const hobby = playersData.hobby[Math.floor(Math.random() * playersData.hobby.length)];
-        const healthCondition = playersData.health[Math.floor(Math.random() * playersData.health.length)];
-        const inventory = playersData.inventory[Math.floor(Math.random() * playersData.inventory.length)];
-        const phobia = playersData.phobia[Math.floor(Math.random() * playersData.phobia.length)];
-        const extra = playersData.extra[Math.floor(Math.random() * playersData.extra.length)];
-        
-        // Выбираем профессию
-        const profession = playersData.professions[Math.floor(Math.random() * playersData.professions.length)];
-        
+    console.log('🎲 Generating character with data:', playersData);
+    
+    const age = this.generateAge();
+    const gender = this.generateGender();
+    const healthSeverity = this.generateHealthSeverity();
+    const experience = this.generateExperience(age);
+    
+    // Проверяем, что playersData содержит массивы
+    if (!playersData || !playersData.traits || !playersData.traits.length) {
+        console.error('❌ Invalid playersData:', playersData);
         return {
             age: age,
             gender: gender,
             body_type: this.generateBodyType(),
-            trait: trait,
-            profession: {
-                name: profession.name,
-                description: profession.description,
-                experience: experience
-            },
-            hobby: hobby,
-            health: {
-                condition: healthCondition,
-                severity: healthSeverity
-            },
-            inventory: inventory,
-            phobia: phobia,
-            extra: extra
+            trait: "Неизвестно",
+            profession: { name: "Неизвестно", description: "", experience: experience },
+            hobby: "Неизвестно",
+            health: { condition: "Неизвестно", severity: healthSeverity },
+            inventory: "Неизвестно",
+            phobia: "Неизвестно",
+            extra: "Неизвестно"
         };
     }
+    
+    // Выбираем случайные значения из массивов
+    const trait = playersData.traits[Math.floor(Math.random() * playersData.traits.length)];
+    const hobby = playersData.hobby[Math.floor(Math.random() * playersData.hobby.length)];
+    const healthCondition = playersData.health[Math.floor(Math.random() * playersData.health.length)];
+    const inventory = playersData.inventory[Math.floor(Math.random() * playersData.inventory.length)];
+    const phobia = playersData.phobia[Math.floor(Math.random() * playersData.phobia.length)];
+    const extra = playersData.extra[Math.floor(Math.random() * playersData.extra.length)];
+    
+    // Выбираем профессию
+    const profession = playersData.professions[Math.floor(Math.random() * playersData.professions.length)];
+    
+    const character = {
+        age: age,
+        gender: gender,
+        body_type: this.generateBodyType(),
+        trait: trait,
+        profession: {
+            name: profession.name,
+            description: profession.description,
+            experience: experience
+        },
+        hobby: hobby,
+        health: {
+            condition: healthCondition,
+            severity: healthSeverity
+        },
+        inventory: inventory,
+        phobia: phobia,
+        extra: extra
+    };
+    
+    console.log('✅ Generated character:', character);
+    return character;
+}
 
     generateGameData(catastrophes, bunkers, bunkerSpaces) {
         const catastrophe = catastrophes[Math.floor(Math.random() * catastrophes.length)];
