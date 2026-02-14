@@ -93,86 +93,60 @@ io.on('connection', (socket) => {
 
     // Старт игры
     socket.on('start_game', async ({ lobbyId, gameDataFromClient }) => {
-        try {
-            console.log(`🎮 start_game: ${lobbyId}`);
-            
-            const lobby = await lobbyManager.getLobby(lobbyId);
-            
-            if (lobby.players.length < 6) {
-                throw new Error('Нужно минимум 6 игроков');
+    try {
+        console.log(`📥 start_game: ${lobbyId}`);
+        
+        // Вызываем метод и получаем обновленное лобби
+        const lobby = await lobbyManager.startGame(lobbyId, gameDataFromClient);
+        
+        // Отправляем события
+        io.to(lobbyId).emit('game_started', lobby.gameData);
+        io.to(lobbyId).emit('lobby_state', lobby);
+        
+    } catch (error) {
+        console.error('❌ start_game error:', error);
+        socket.emit('error', { message: error.message });
+    }
+});
+
+// Раскрытие характеристики
+socket.on('reveal_characteristic', async ({ lobbyId, playerId, field }) => {
+    try {
+        const lobby = await lobbyManager.revealCharacteristic(lobbyId, playerId, field);
+        io.to(lobbyId).emit('characteristic_revealed', { playerId, field });
+        io.to(lobbyId).emit('lobby_state', lobby);
+    } catch (error) {
+        socket.emit('error', { message: error.message });
+    }
+});
+
+
+    socket.on('reveal_characteristic', async ({ lobbyId, playerId, field }) => {
+    try {
+        const lobby = await lobbyManager.getLobby(lobbyId);
+        const player = lobby.players.find(p => p.id === playerId);
+        
+        if (player) {
+            // Инициализируем массив раскрытых характеристик, если его нет
+            if (!player.revealedCharacteristics) {
+                player.revealedCharacteristics = [];
             }
             
-            // Генерируем персонажей используя gameGenerator
-            for (const player of lobby.players) {
-                player.character = gameGenerator.generateCharacter(gameDataFromClient.playersData);
+            // Добавляем характеристику, если её ещё нет
+            if (!player.revealedCharacteristics.includes(field)) {
+                player.revealedCharacteristics.push(field);
             }
-            
-            // Проверяем пол
-            const genders = lobby.players.map(p => p.character.gender);
-            if (!genders.includes("Мужской")) {
-                const randomPlayer = lobby.players.find(p => p.character.gender !== "Женский");
-                if (randomPlayer) randomPlayer.character.gender = "Мужской";
-            }
-            if (!genders.includes("Женский")) {
-                const randomPlayer = lobby.players.find(p => p.character.gender !== "Мужской");
-                if (randomPlayer) randomPlayer.character.gender = "Женский";
-            }
-            
-            // Ограничиваем трансформеров
-            const transformerCount = genders.filter(g => g === "Трансформер").length;
-            if (transformerCount > 1) {
-                const transformerPlayers = lobby.players.filter(p => p.character.gender === "Трансформер");
-                for (let i = 1; i < transformerPlayers.length; i++) {
-                    transformerPlayers[i].character.gender = Math.random() > 0.5 ? "Мужской" : "Женский";
-                }
-            }
-            
-            // Места в бункере (50%, округление вниз)
-            const bunkerSpaces = Math.floor(lobby.players.length * 0.5);
-            
-            // Данные игры
-            const catastrophe = gameDataFromClient.catastrophes[Math.floor(Math.random() * gameDataFromClient.catastrophes.length)];
-            const bunker = gameDataFromClient.bunkers[Math.floor(Math.random() * gameDataFromClient.bunkers.length)];
-            
-            lobby.gameData = {
-                catastrophe,
-                bunker: {
-                    ...bunker,
-                    spaces: bunkerSpaces
-                }
-            };
-            
-            lobby.status = 'playing';
             
             await lobbyManager.saveLobby(lobbyId, lobby);
             
-            // Отправляем всем игрокам
-            io.to(lobbyId).emit('game_started', lobby.gameData);
+            // Отправляем событие о раскрытии конкретной характеристики
+            io.to(lobbyId).emit('characteristic_revealed', { playerId, field });
             io.to(lobbyId).emit('lobby_state', lobby);
-            
-            console.log(`✅ Game started in ${lobbyId}`);
-            
-        } catch (error) {
-            console.error('❌ start_game error:', error);
-            socket.emit('error', { message: error.message });
         }
-    });
-
-    // Раскрытие персонажа
-    socket.on('reveal_character', async ({ lobbyId, playerId }) => {
-        try {
-            const lobby = await lobbyManager.getLobby(lobbyId);
-            const player = lobby.players.find(p => p.id === playerId);
-            if (player) {
-                player.revealed = true;
-                await lobbyManager.saveLobby(lobbyId, lobby);
-                io.to(lobbyId).emit('character_revealed', { playerId });
-                io.to(lobbyId).emit('lobby_state', lobby);
-            }
-        } catch (error) {
-            socket.emit('error', { message: error.message });
-        }
-    });
+    } catch (error) {
+        socket.emit('error', { message: error.message });
+    }
+});
 
     // Изгнать игрока
     socket.on('kick_player', async ({ lobbyId, hostId, playerId }) => {
