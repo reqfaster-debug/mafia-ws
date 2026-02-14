@@ -91,8 +91,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Старт игры
-// Старт игры
 socket.on('start_game', async ({ lobbyId, gameDataFromClient }) => {
     try {
         console.log(`📥 start_game: ${lobbyId}`);
@@ -102,9 +100,16 @@ socket.on('start_game', async ({ lobbyId, gameDataFromClient }) => {
         
         // Отправляем события с небольшой задержкой
         setTimeout(() => {
-            io.to(lobbyId).emit('game_started', lobby.gameData);
+            // СОЗДАЕМ ПОЛНЫЕ ДАННЫЕ ИГРЫ С ИГРОКАМИ
+            const fullGameData = {
+                ...lobby.gameData,
+                players: lobby.players  // ← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ!
+            };
+            
+            io.to(lobbyId).emit('game_started', fullGameData);
             io.to(lobbyId).emit('lobby_state', lobby);
             console.log(`✅ Game started events sent for ${lobbyId}`);
+            console.log(`✅ Players in gameData: ${fullGameData.players.length}`);
         }, 500);
         
     } catch (error) {
