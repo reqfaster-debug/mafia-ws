@@ -23,19 +23,33 @@ class GameGenerator {
         }
     }
 
-    generateCharacter(playersData) {
-        const age = this.generateAge();
-        const gender = this.generateGender();
+     generateCharacter(playersData) {
+        const age = Math.floor(Math.random() * (90 - 18 + 1)) + 18;
+        
+        const rand = Math.random();
+        let gender;
+        if (rand < 0.45) gender = "Мужской";
+        else if (rand < 0.9) gender = "Женский";
+        else gender = "Трансформер";
+        
+        const bodyTypes = ["Худое", "Атлетическое", "Полное", "Ожирение-сильное"];
         
         const profession = playersData.professions[Math.floor(Math.random() * playersData.professions.length)];
         
+        let experience;
+        if (age <= 24) {
+            experience = Math.floor(Math.random() * (age / 8)) + 1;
+        } else {
+            experience = Math.floor(Math.random() * (age / 5)) + 1;
+        }
+        
         return {
-            age: age,
-            gender: gender,
-            body_type: this.generateBodyType(),
+            age,
+            gender,
+            body_type: bodyTypes[Math.floor(Math.random() * bodyTypes.length)],
             trait: playersData.traits[Math.floor(Math.random() * playersData.traits.length)],
-            profession: profession,
-            experience_years: this.generateExperience(age),
+            profession,
+            experience_years: experience,
             hobby: playersData.hobby[Math.floor(Math.random() * playersData.hobby.length)],
             health: playersData.health[Math.floor(Math.random() * playersData.health.length)],
             inventory: playersData.inventory[Math.floor(Math.random() * playersData.inventory.length)],
