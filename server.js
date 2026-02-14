@@ -38,6 +38,7 @@ app.use('/api/lobby', lobbyRoutes);
 
 // Логика управления лобби
 const lobbyManager = require('./logic/lobbyManager');
+const gameGenerator = require('./logic/gameGenerator');
 
 io.on('connection', (socket) => {
     console.log('✅ Client connected:', socket.id);
@@ -101,9 +102,9 @@ io.on('connection', (socket) => {
                 throw new Error('Нужно минимум 6 игроков');
             }
             
-            // Генерируем персонажей
+            // Генерируем персонажей используя gameGenerator
             for (const player of lobby.players) {
-                player.character = lobbyManager.generateCharacter(gameDataFromClient.playersData);
+                player.character = gameGenerator.generateCharacter(gameDataFromClient.playersData);
             }
             
             // Проверяем пол
@@ -126,7 +127,7 @@ io.on('connection', (socket) => {
                 }
             }
             
-            // Места в бункере
+            // Места в бункере (50%, округление вниз)
             const bunkerSpaces = Math.floor(lobby.players.length * 0.5);
             
             // Данные игры
