@@ -42,20 +42,20 @@ class GameGenerator {
         };
     }
 
-    generateGameData(catastrophes, bunkers, bunkerSpaces) {
-        // Выбираем случайную катастрофу и бункер
-        const catastrophe = catastrophes[Math.floor(Math.random() * catastrophes.length)];
-        const bunker = bunkers[Math.floor(Math.random() * bunkers.length)];
-        
-        // Добавляем информацию о местах в бункере
-        return {
-            catastrophe: catastrophe,
-            bunker: {
-                ...bunker,
-                spaces: bunkerSpaces  // 👈 Добавляем количество мест
-            }
-        };
-    }
+generateGameData(catastrophes, bunkers, bunkerSpaces) {
+    // Выбираем случайную катастрофу и бункер
+    const catastrophe = catastrophes[Math.floor(Math.random() * catastrophes.length)];
+    const bunker = bunkers[Math.floor(Math.random() * bunkers.length)];
+    
+    // Добавляем информацию о местах в бункере
+    return {
+        catastrophe: catastrophe,  // catastrophe больше не содержит sound поле
+        bunker: {
+            ...bunker,
+            spaces: bunkerSpaces
+        }
+    };
+}
 }
 
 module.exports = new GameGenerator();
