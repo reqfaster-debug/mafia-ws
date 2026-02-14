@@ -11,14 +11,12 @@ class GameGenerator {
     }
 
     generateBodyType() {
-        const types = ["Худое", "Атлетическое", "Полное", "Ожирение-сильное"];
+        const types = ["Худощавое", "Атлетическое", "Среднее", "Плотное", "Полное", "Ожирение"];
         return types[Math.floor(Math.random() * types.length)];
     }
 
     generateExperience(age) {
-        // Максимальный стаж зависит от возраста
         const maxExperience = age <= 24 ? Math.floor(age / 8) : Math.floor(age / 4);
-        // Стаж от 1 до maxExperience
         return Math.floor(Math.random() * maxExperience) + 1;
     }
 
@@ -27,33 +25,115 @@ class GameGenerator {
         return severities[Math.floor(Math.random() * severities.length)];
     }
 
+    // ВСТРОЕННЫЕ ДАННЫЕ НА СЛУЧАЙ, ЕСЛИ playersData ПУСТОЙ
+    getDefaultData() {
+        return {
+            traits: [
+                "Храбрый", "Трусливый", "Агрессивный", "Спокойный", 
+                "Добрый", "Злой", "Хитрый", "Честный", "Лживый"
+            ],
+            hobby: [
+                "Рыбалка", "Охота", "Чтение", "Спорт", "Музыка", 
+                "Рисование", "Кулинария", "Садоводство"
+            ],
+            health: [
+                "Здоров", "Диабет", "Астма", "Гипертония", "Аллергия"
+            ],
+            inventory: [
+                "Аптечка", "Нож", "Фонарик", "Веревка", "Спички", 
+                "Консервы", "Палатка", "Компас", "Топор"
+            ],
+            phobia: [
+                "Клаустрофобия", "Арахнофобия", "Акрофобия", "Нет фобий"
+            ],
+            extra: [
+                "Водительские права", "Знание языков", "Навыки выживания", 
+                "Медицинское образование", "Техническое образование"
+            ],
+            professions: [
+                { name: "Врач", description: "Может лечить" },
+                { name: "Инженер", description: "Может чинить" },
+                { name: "Учитель", description: "Может обучать" },
+                { name: "Строитель", description: "Может строить" },
+                { name: "Военный", description: "Владеет оружием" }
+            ],
+            bodyTypes: [
+                "Худощавое", "Атлетическое", "Среднее", "Плотное"
+            ],
+            genders: ["Мужской", "Женский"]
+        };
+    }
+
     generateCharacter(playersData) {
+        console.log('🎲 Generating character with data:', playersData);
+        
         const age = this.generateAge();
-        const gender = this.generateGender();
         const healthSeverity = this.generateHealthSeverity();
         const experience = this.generateExperience(age);
         
-        const profession = playersData.professions[Math.floor(Math.random() * playersData.professions.length)];
+        // Используем встроенные данные по умолчанию
+        const defaultData = this.getDefaultData();
         
-        return {
+        // Объединяем полученные данные с дефолтными
+        const data = {
+            traits: playersData?.traits?.length ? playersData.traits : defaultData.traits,
+            hobby: playersData?.hobby?.length ? playersData.hobby : defaultData.hobby,
+            health: playersData?.health?.length ? playersData.health : defaultData.health,
+            inventory: playersData?.inventory?.length ? playersData.inventory : defaultData.inventory,
+            phobia: playersData?.phobia?.length ? playersData.phobia : defaultData.phobia,
+            extra: playersData?.extra?.length ? playersData.extra : defaultData.extra,
+            professions: playersData?.professions?.length ? playersData.professions : defaultData.professions,
+            bodyTypes: playersData?.bodyTypes?.length ? playersData.bodyTypes : defaultData.bodyTypes,
+            genders: playersData?.genders?.length ? playersData.genders : defaultData.genders
+        };
+        
+        console.log('📊 Using data sources:', {
+            traits: data.traits.length,
+            hobby: data.hobby.length,
+            health: data.health.length,
+            inventory: data.inventory.length,
+            phobia: data.phobia.length,
+            extra: data.extra.length,
+            professions: data.professions.length,
+            bodyTypes: data.bodyTypes.length,
+            genders: data.genders.length
+        });
+        
+        // Выбираем случайные значения из data
+        const trait = data.traits[Math.floor(Math.random() * data.traits.length)];
+        const hobby = data.hobby[Math.floor(Math.random() * data.hobby.length)];
+        const healthCondition = data.health[Math.floor(Math.random() * data.health.length)];
+        const inventory = data.inventory[Math.floor(Math.random() * data.inventory.length)];
+        const phobia = data.phobia[Math.floor(Math.random() * data.phobia.length)];
+        const extra = data.extra[Math.floor(Math.random() * data.extra.length)];
+        const bodyType = data.bodyTypes[Math.floor(Math.random() * data.bodyTypes.length)];
+        const gender = data.genders[Math.floor(Math.random() * data.genders.length)];
+        
+        // Выбираем профессию
+        const profession = data.professions[Math.floor(Math.random() * data.professions.length)];
+        
+        const character = {
             age: age,
             gender: gender,
-            body_type: this.generateBodyType(),
-            trait: playersData.traits[Math.floor(Math.random() * playersData.traits.length)],
+            body_type: bodyType,
+            trait: trait,
             profession: {
-                name: profession.name,
-                description: profession.description,
-                experience: experience // Добавляем стаж
+                name: profession.name || "Неизвестно",
+                description: profession.description || "",
+                experience: experience
             },
-            hobby: playersData.hobby[Math.floor(Math.random() * playersData.hobby.length)],
+            hobby: hobby,
             health: {
-                condition: playersData.health[Math.floor(Math.random() * playersData.health.length)],
-                severity: healthSeverity // Добавляем степень тяжести
+                condition: healthCondition,
+                severity: healthSeverity
             },
-            inventory: playersData.inventory[Math.floor(Math.random() * playersData.inventory.length)],
-            phobia: playersData.phobia[Math.floor(Math.random() * playersData.phobia.length)],
-            extra: playersData.extra[Math.floor(Math.random() * playersData.extra.length)]
+            inventory: inventory,
+            phobia: phobia,
+            extra: extra
         };
+        
+        console.log('✅ Generated character:', character);
+        return character;
     }
 
     generateGameData(catastrophes, bunkers, bunkerSpaces) {
