@@ -298,78 +298,77 @@ io.on('connection', (socket) => {
             socket.emit('error', { message: error.message });
         }
     });
-
-    // Улучшение здоровья
-    socket.on('improve_health', async ({ lobbyId, hostId, playerId }) => {
-        try {
-            const lobby = await lobbyManager.getLobby(lobbyId);
-            if (lobby.host_id !== hostId) {
-                throw new Error('Только хост может улучшать здоровье');
-            }
-            const player = lobby.players.find(p => p.id === playerId);
-            if (player && player.character.health) {
-                const severity = player.character.health.severity;
-                const severities = ["критическая", "тяжелая", "средняя", "легкая"];
-                const currentIndex = severities.indexOf(severity);
-                if (currentIndex > 0) {
-                    player.character.health.severity = severities[currentIndex - 1];
-                    if (player.character.health.severity === "легкая") {
-                        player.character.health.condition = "Идеально здоров";
-                    }
+// Улучшение здоровья
+socket.on('improve_health', async ({ lobbyId, hostId, playerId }) => {
+    try {
+        const lobby = await lobbyManager.getLobby(lobbyId);
+        if (lobby.host_id !== hostId) {
+            throw new Error('Только хост может улучшать здоровье');
+        }
+        const player = lobby.players.find(p => p.id === playerId);
+        if (player && player.character.health) {
+            const severity = player.character.health.severity;
+            const severities = ["критическая", "тяжелая", "средняя", "легкая"];
+            const currentIndex = severities.indexOf(severity);
+            if (currentIndex > 0) {
+                player.character.health.severity = severities[currentIndex - 1];
+                if (player.character.health.severity === "легкая") {
+                    player.character.health.condition = "Идеально здоров";
                 }
-                await lobbyManager.saveLobby(lobbyId, lobby);
-                io.to(lobbyId).emit('lobby_state', lobby);
             }
-        } catch (error) {
-            socket.emit('error', { message: error.message });
+            await lobbyManager.saveLobby(lobbyId, lobby);
+            io.to(lobbyId).emit('lobby_state', lobby);
         }
-    });
+    } catch (error) {
+        socket.emit('error', { message: error.message });
+    }
+});
 
-    // Ухудшение здоровья
-    socket.on('worsen_health', async ({ lobbyId, hostId, playerId }) => {
-        try {
-            const lobby = await lobbyManager.getLobby(lobbyId);
-            if (lobby.host_id !== hostId) {
-                throw new Error('Только хост может ухудшать здоровье');
-            }
-            const player = lobby.players.find(p => p.id === playerId);
-            if (player && player.character.health) {
-                const severity = player.character.health.severity;
-                const severities = ["легкая", "средняя", "тяжелая", "критическая"];
-                const currentIndex = severities.indexOf(severity);
-                if (currentIndex < severities.length - 1) {
-                    player.character.health.severity = severities[currentIndex + 1];
-                    if (player.character.health.severity === "критическая") {
-                        player.alive = false;
-                        io.to(lobbyId).emit('player_killed', { playerId });
-                    }
+// Ухудшение здоровья
+socket.on('worsen_health', async ({ lobbyId, hostId, playerId }) => {
+    try {
+        const lobby = await lobbyManager.getLobby(lobbyId);
+        if (lobby.host_id !== hostId) {
+            throw new Error('Только хост может ухудшать здоровье');
+        }
+        const player = lobby.players.find(p => p.id === playerId);
+        if (player && player.character.health) {
+            const severity = player.character.health.severity;
+            const severities = ["легкая", "средняя", "тяжелая", "критическая"];
+            const currentIndex = severities.indexOf(severity);
+            if (currentIndex < severities.length - 1) {
+                player.character.health.severity = severities[currentIndex + 1];
+                if (player.character.health.severity === "критическая") {
+                    player.alive = false;
+                    io.to(lobbyId).emit('player_killed', { playerId });
                 }
-                await lobbyManager.saveLobby(lobbyId, lobby);
-                io.to(lobbyId).emit('lobby_state', lobby);
             }
-        } catch (error) {
-            socket.emit('error', { message: error.message });
+            await lobbyManager.saveLobby(lobbyId, lobby);
+            io.to(lobbyId).emit('lobby_state', lobby);
         }
-    });
+    } catch (error) {
+        socket.emit('error', { message: error.message });
+    }
+});
 
-    // Добавление к характеристике
-    socket.on('add_to_characteristic', async ({ lobbyId, hostId, playerId, field, value }) => {
-        try {
-            const lobby = await lobbyManager.getLobby(lobbyId);
-            if (lobby.host_id !== hostId) {
-                throw new Error('Только хост может изменять характеристики');
-            }
-            const player = lobby.players.find(p => p.id === playerId);
-            if (player && player.character) {
-                const currentValue = player.character[field] || '';
-                player.character[field] = currentValue ? `${currentValue}, ${value}` : value;
-                await lobbyManager.saveLobby(lobbyId, lobby);
-                io.to(lobbyId).emit('lobby_state', lobby);
-            }
-        } catch (error) {
-            socket.emit('error', { message: error.message });
+// Добавление к характеристике
+socket.on('add_to_characteristic', async ({ lobbyId, hostId, playerId, field, value }) => {
+    try {
+        const lobby = await lobbyManager.getLobby(lobbyId);
+        if (lobby.host_id !== hostId) {
+            throw new Error('Только хост может изменять характеристики');
         }
-    });
+        const player = lobby.players.find(p => p.id === playerId);
+        if (player && player.character) {
+            const currentValue = player.character[field] || '';
+            player.character[field] = currentValue ? `${currentValue}, ${value}` : value;
+            await lobbyManager.saveLobby(lobbyId, lobby);
+            io.to(lobbyId).emit('lobby_state', lobby);
+        }
+    } catch (error) {
+        socket.emit('error', { message: error.message });
+    }
+});
 
     // Голосование
     socket.on('start_voting', ({ lobbyId, duration = 15 }) => {
