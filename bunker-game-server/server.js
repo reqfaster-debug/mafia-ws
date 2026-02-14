@@ -289,7 +289,7 @@ socket.on('transfer_host', async ({ lobbyId, currentHostId, newHostId }) => {
     }
 });
 
-// Обновление характеристик
+// Обновление характеристик с проверкой на критическое здоровье
 socket.on('update_character', async ({ lobbyId, hostId, playerId, updates }) => {
     try {
         const lobby = await lobbyManager.getLobby(lobbyId);
@@ -298,14 +298,43 @@ socket.on('update_character', async ({ lobbyId, hostId, playerId, updates }) => 
         }
         const player = lobby.players.find(p => p.id === playerId);
         if (player) {
-            player.character = { ...player.character, ...updates };
+            // Обновляем character, сохраняя структуру
+            if (!player.character) player.character = {};
             
-            // Проверка на критическое здоровье
-            if (updates.health === "Критическое") {
-                player.alive = false;
-                io.to(lobbyId).emit('health_critical', { playerId });
-                io.to(lobbyId).emit('player_killed', { playerId });
-            }
+            // Обрабатываем обновления
+            Object.keys(updates).forEach(key => {
+                if (key === 'health') {
+                    // Для здоровья может быть объект или строка
+                    if (typeof updates[key] === 'string') {
+                        player.character.health = {
+                            condition: updates[key],
+                            severity: player.character.health?.severity || 'средняя'
+                        };
+                    } else {
+                        player.character.health = updates[key];
+                    }
+                    
+                    // Проверка на критическое здоровье
+                    if (player.character.health.severity === 'критическая') {
+                        player.alive = false;
+                        io.to(lobbyId).emit('health_critical', { playerId });
+                        io.to(lobbyId).emit('player_killed', { playerId });
+                    }
+                } else if (key === 'profession') {
+                    // Для профессии может быть объект или строка
+                    if (typeof updates[key] === 'string') {
+                        player.character.profession = {
+                            name: updates[key],
+                            description: '',
+                            experience: player.character.profession?.experience || 1
+                        };
+                    } else {
+                        player.character.profession = updates[key];
+                    }
+                } else {
+                    player.character[key] = updates[key];
+                }
+            });
             
             await lobbyManager.saveLobby(lobbyId, lobby);
             io.to(lobbyId).emit('character_updated', { playerId, updates });
