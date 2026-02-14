@@ -211,15 +211,55 @@ async startGame(lobbyId, gameDataFromClient) {
     // Генерируем персонажей
     for (const player of lobby.players) {
         const character = gameGenerator.generateCharacter(gameDataFromClient.playersData);
+        
+        // ВАЖНО: Проверяем и заполняем пустые поля
+        if (!character.gender || character.gender.trim() === '') {
+            character.gender = ["Мужской", "Женский"][Math.floor(Math.random() * 2)];
+        }
+        if (!character.body_type || character.body_type.trim() === '') {
+            character.body_type = ["Худощавое", "Атлетическое", "Среднее", "Плотное"][Math.floor(Math.random() * 4)];
+        }
+        if (!character.trait || character.trait.trim() === '') {
+            character.trait = ["Храбрый", "Трусливый", "Добрый", "Злой", "Хитрый"][Math.floor(Math.random() * 5)];
+        }
+        if (!character.profession || !character.profession.name) {
+            character.profession = {
+                name: ["Врач", "Инженер", "Учитель", "Строитель", "Военный"][Math.floor(Math.random() * 5)],
+                experience: Math.floor(Math.random() * 20) + 1
+            };
+        }
+        if (!character.hobby || character.hobby.trim() === '') {
+            character.hobby = ["Рыбалка", "Охота", "Чтение", "Спорт", "Музыка"][Math.floor(Math.random() * 5)];
+        }
+        if (!character.health || !character.health.condition) {
+            character.health = {
+                condition: ["Здоров", "Диабет", "Астма", "Гипертония"][Math.floor(Math.random() * 4)],
+                severity: ["легкая", "средняя", "тяжелая"][Math.floor(Math.random() * 3)]
+            };
+        }
+        if (!character.inventory || character.inventory.trim() === '') {
+            character.inventory = ["Аптечка", "Нож", "Фонарик", "Веревка", "Спички"][Math.floor(Math.random() * 5)];
+        }
+        if (!character.phobia || character.phobia.trim() === '') {
+            character.phobia = ["Клаустрофобия", "Арахнофобия", "Акрофобия", "Нет фобий"][Math.floor(Math.random() * 4)];
+        }
+        if (!character.extra || character.extra.trim() === '') {
+            character.extra = ["Водительские права", "Знание языков", "Навыки выживания"][Math.floor(Math.random() * 3)];
+        }
+        
         player.character = character;
         player.revealedCharacteristics = [];
         console.log(`✅ Generated character for ${player.nickname}:`, {
             age: character.age,
             gender: character.gender,
+            body_type: character.body_type,
             trait: character.trait,
             profession: character.profession.name,
             hobby: character.hobby,
-            health: character.health.condition
+            health: character.health.condition,
+            inventory: character.inventory,
+            phobia: character.phobia,
+            extra: character.extra
         });
     }
     
