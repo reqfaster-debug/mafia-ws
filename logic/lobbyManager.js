@@ -30,38 +30,38 @@ class LobbyManager {
         await this.saveLobby(lobbyId, lobby);
         return { lobbyId, hostId };
     }
-async getLobby(lobbyId) {
+    async getLobby(lobbyId) {
     const filePath = path.join(__dirname, '..', 'data', `lobby_${lobbyId}.json`);
     
     try {
-        const data = await fs.readFile(filePath, 'utf8');
+        let data = await fs.readFile(filePath, 'utf8');
         
-        // Очищаем данные от любых проблемных символов
-        let cleanData = data
+        // Агрессивная очистка данных
+        data = data
             .replace(/^\uFEFF/, '')           // Удаляем BOM
             .replace(/\0/g, '')                // Удаляем нулевые байты
-            .replace(/[^\x20-\x7E\n\r\t{}[\]:,"]+/g, '') // Удаляем не-ASCII символы кроме нужных
+            .replace(/[^\x20-\x7E\n\r\t{}[\]:,"]+/g, '') // Удаляем не-ASCII
             .trim();
         
-        // Находим последнюю закрывающую скобку и обрезаем всё после неё
-        const lastBrace = cleanData.lastIndexOf('}');
-        if (lastBrace > 0) {
-            cleanData = cleanData.substring(0, lastBrace + 1);
+        // Находим последнюю закрывающую скобку
+        const lastBrace = data.lastIndexOf('}');
+        if (lastBrace === -1) {
+            throw new Error('No valid JSON object found');
         }
         
-        // Проверяем, что это валидный JSON
-        try {
-            return JSON.parse(cleanData);
-        } catch (parseError) {
-            console.error(`❌ JSON parse error for ${lobbyId}, attempting recovery...`);
-            
-            // Если не получилось, пробуем найти валидную часть
-            const match = cleanData.match(/\{.*\}/s);
-            if (match) {
-                return JSON.parse(match[0]);
-            }
-            throw new Error('Cannot recover lobby data');
+        // Берём только валидную часть
+        const validJson = data.substring(0, lastBrace + 1);
+        
+        // Парсим
+        const lobby = JSON.parse(validJson);
+        
+        // Если были лишние символы, перезаписываем файл
+        if (validJson !== data) {
+            await fs.writeFile(filePath, validJson, 'utf8');
+            console.log(`🧹 Cleaned up lobby file on read: ${lobbyId}`);
         }
+        
+        return lobby;
         
     } catch (error) {
         console.error(`❌ Error reading lobby ${lobbyId}:`, error.message);
@@ -75,23 +75,31 @@ async getLobby(lobbyId) {
                 .replace(/\0/g, '')
                 .trim();
             
-            console.log(`🔄 Restored from backup: ${lobbyId}`);
-            return JSON.parse(cleanBackup);
-            
+            const lastBrace = cleanBackup.lastIndexOf('}');
+            if (lastBrace > 0) {
+                const validBackup = cleanBackup.substring(0, lastBrace + 1);
+                const lobby = JSON.parse(validBackup);
+                await fs.writeFile(filePath, validBackup, 'utf8');
+                console.log(`🔄 Restored from backup: ${lobbyId}`);
+                return lobby;
+            }
         } catch (backupError) {
-            // Создаём новый файл если ничего не помогло
-            console.log(`🆕 Creating new lobby file for ${lobbyId}`);
-            const newLobby = {
-                id: lobbyId,
-                host_id: null,
-                status: 'waiting',
-                players: [],
-                gameData: null,
-                createdAt: new Date().toISOString()
-            };
-            await this.saveLobby(lobbyId, newLobby);
-            return newLobby;
+            console.error(`❌ Backup also corrupted: ${lobbyId}`);
         }
+        
+        // Создаём новое лобби
+        console.log(`🆕 Creating new lobby: ${lobbyId}`);
+        const newLobby = {
+            id: lobbyId,
+            host_id: null,
+            status: 'waiting',
+            players: [],
+            gameData: null,
+            createdAt: new Date().toISOString()
+        };
+        
+        await this.saveLobby(lobbyId, newLobby);
+        return newLobby;
     }
 }
 
@@ -111,14 +119,35 @@ async saveLobby(lobbyId, lobby) {
         // Записываем новый файл
         const data = JSON.stringify(lobby, null, 2);
         
-        // Проверяем, что данные валидны
-        JSON.parse(data); // Бросит ошибку если невалидно
-        
+        // Записываем файл
         await fs.writeFile(filePath, data, 'utf8');
         
-        // Проверяем, что записалось корректно
+        // ✅ ИСПРАВЛЕНИЕ: Читаем только что записанный файл
         const written = await fs.readFile(filePath, 'utf8');
-        JSON.parse(written);
+        
+        // Очищаем от возможных лишних символов
+        const cleanData = written
+            .replace(/^\uFEFF/, '')           // Удаляем BOM
+            .replace(/\0/g, '')                // Удаляем нулевые байты
+            .trim();
+        
+        // Находим последнюю закрывающую скобку
+        const lastBrace = cleanData.lastIndexOf('}');
+        if (lastBrace === -1) {
+            throw new Error('No closing brace found');
+        }
+        
+        // Берём только валидную часть до последней скобки
+        const validJson = cleanData.substring(0, lastBrace + 1);
+        
+        // Проверяем, что это валидный JSON
+        JSON.parse(validJson);
+        
+        // Если всё ок, перезаписываем файл очищенными данными
+        if (validJson !== written) {
+            await fs.writeFile(filePath, validJson, 'utf8');
+            console.log(`🧹 Cleaned up JSON file: ${lobbyId}`);
+        }
         
         console.log(`💾 Lobby saved: ${lobbyId}`);
         
@@ -133,10 +162,34 @@ async saveLobby(lobbyId, lobby) {
         // Пытаемся восстановить из бэкапа
         try {
             const backupData = await fs.readFile(backupPath, 'utf8');
-            await fs.writeFile(filePath, backupData, 'utf8');
-            console.log(`🔄 Restored from backup after failed save: ${lobbyId}`);
+            const cleanBackup = backupData
+                .replace(/^\uFEFF/, '')
+                .replace(/\0/g, '')
+                .trim();
+            
+            const lastBrace = cleanBackup.lastIndexOf('}');
+            if (lastBrace > 0) {
+                const validBackup = cleanBackup.substring(0, lastBrace + 1);
+                await fs.writeFile(filePath, validBackup, 'utf8');
+                console.log(`🔄 Restored from backup: ${lobbyId}`);
+            } else {
+                throw new Error('Invalid backup');
+            }
         } catch (restoreError) {
-            console.error(`❌ Cannot restore lobby ${lobbyId}`);
+            console.error(`❌ Cannot restore lobby ${lobbyId}:`, restoreError);
+            
+            // Если ничего не помогло, создаём новое лобби
+            const newLobby = {
+                id: lobbyId,
+                host_id: lobby.host_id || null,
+                status: 'waiting',
+                players: lobby.players || [],
+                gameData: lobby.gameData || null,
+                createdAt: lobby.createdAt || new Date().toISOString()
+            };
+            
+            await fs.writeFile(filePath, JSON.stringify(newLobby, null, 2), 'utf8');
+            console.log(`🆕 Created new lobby file: ${lobbyId}`);
         }
         
         throw new Error('Failed to save lobby');
