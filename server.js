@@ -418,7 +418,21 @@ socket.on('reconnectPlayer', ({ playerId }) => {
     const isActive = [...activePlayers.values()].some(p => p.id === playerId);
     socket.emit('playerActiveCheck', { active: isActive });
   });
-socket.on('joinLobby', ({ lobbyId, playerName, isCreator }) => {
+
+  socket.on('requestLobbyUpdate', ({ lobbyId }) => {
+  console.log('Запрос обновления лобби:', lobbyId);
+  const lobby = lobbies.get(lobbyId);
+  if (lobby) {
+    console.log('Отправляем всех игроков лобби:', lobby.players.length);
+    socket.emit('lobbyUpdate', { 
+      players: lobby.players,
+      creatorId: lobby.creator 
+    });
+  }
+});
+
+
+  socket.on('joinLobby', ({ lobbyId, playerName, isCreator }) => {
   console.log('Попытка входа в лобби:', lobbyId, playerName, 'isCreator:', isCreator);
 
   const lobby = lobbies.get(lobbyId);
@@ -455,8 +469,9 @@ socket.on('joinLobby', ({ lobbyId, playerName, isCreator }) => {
           player: existingPlayer, 
           isCreator: lobby.creator === existingPlayer.id 
         });
+        // ВАЖНО: отправляем ВСЕХ игроков
         io.to(lobbyId).emit('lobbyUpdate', { 
-          players: lobby.players, 
+          players: lobby.players,  // ← ДОЛЖНЫ БЫТЬ ВСЕ ИГРОКИ
           creatorId: lobby.creator 
         });
       }
@@ -466,8 +481,9 @@ socket.on('joinLobby', ({ lobbyId, playerName, isCreator }) => {
         player: existingPlayer, 
         isCreator: lobby.creator === existingPlayer.id 
       });
+      // ВАЖНО: отправляем ВСЕХ игроков
       io.to(lobbyId).emit('lobbyUpdate', { 
-        players: lobby.players, 
+        players: lobby.players,  // ← ДОЛЖНЫ БЫТЬ ВСЕ ИГРОКИ
         creatorId: lobby.creator 
       });
     }
@@ -492,14 +508,18 @@ socket.on('joinLobby', ({ lobbyId, playerName, isCreator }) => {
     player, 
     isCreator: lobby.creator === player.id 
   });
+  
+  // ВАЖНО: отправляем ВСЕХ игроков
   io.to(lobbyId).emit('lobbyUpdate', { 
-    players: lobby.players, 
+    players: lobby.players,  // ← ДОЛЖНЫ БЫТЬ ВСЕ ИГРОКИ
     creatorId: lobby.creator 
   });
 
   saveData();
   console.log('Новый игрок присоединился:', playerName);
 });
+
+
 
  socket.on('startGame', ({ lobbyId }) => {
   const lobby = lobbies.get(lobbyId);
