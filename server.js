@@ -230,129 +230,154 @@ app.get('/api/check-lobby/:lobbyId', (req, res) => {
 });
 
 app.get('/api/check-player/:playerId', (req, res) => {
-  try {
-    const { playerId } = req.params;
-    
-    // Проверяем в играх
-    const gameId = playerGameMap.get(playerId);
-    if (gameId) {
-      const game = games.get(gameId);
-      if (game) {
-        const player = game.players.find(p => p.id === playerId);
-        if (player) {
-          return res.json({
-            active: true,
-            type: 'game',
-            gameId: gameId,
-            lobbyId: null,
-            player: player,
-            gameData: {
-              disaster: game.disaster,
-              bunker: game.bunker,
-              players: game.players
+    try {
+        const { playerId } = req.params;
+        
+        // Проверяем в играх
+        const gameId = playerGameMap.get(playerId);
+        if (gameId) {
+            const game = games.get(gameId);
+            if (game) {
+                const player = game.players.find(p => p.id === playerId);
+                if (player) {
+                    return res.json({
+                        active: true,
+                        type: 'game',
+                        gameId: gameId,
+                        lobbyId: game.lobbyId, // Теперь есть lobbyId
+                        player: player,
+                        gameData: {
+                            disaster: game.disaster,
+                            bunker: game.bunker,
+                            players: game.players
+                        }
+                    });
+                }
             }
-          });
         }
-      }
+        
+        // Проверяем в лобби (даже если игра началась)
+        for (const [lId, lobby] of lobbies) {
+            const player = lobby.players.find(p => p.id === playerId);
+            if (player) {
+                return res.json({
+                    active: true,
+                    type: lobby.gameId ? 'game_started' : 'lobby',
+                    gameId: lobby.gameId,
+                    lobbyId: lId,
+                    player: player,
+                    players: lobby.players
+                });
+            }
+        }
+        
+        // Проверяем в постоянном хранилище
+        const savedPlayer = playersDataMap.get(playerId);
+        if (savedPlayer) {
+            return res.json({
+                active: false,
+                saved: true,
+                player: savedPlayer
+            });
+        }
+        
+        res.json({ active: false });
+        
+    } catch (error) {
+        console.error('Ошибка проверки игрока:', error);
+        res.status(500).json({ error: 'Ошибка проверки игрока' });
     }
-    
-    // Проверяем в лобби
-    for (const [lId, lobby] of lobbies) {
-      const player = lobby.players.find(p => p.id === playerId);
-      if (player) {
-        return res.json({
-          active: true,
-          type: 'lobby',
-          gameId: null,
-          lobbyId: lId,
-          player: player,
-          players: lobby.players
-        });
-      }
-    }
-    
-    // Проверяем в постоянном хранилище
-    const savedPlayer = playersDataMap.get(playerId);
-    if (savedPlayer) {
-      return res.json({
-        active: false,
-        saved: true,
-        player: savedPlayer
-      });
-    }
-    
-    res.json({ active: false });
-    
-  } catch (error) {
-    console.error('Ошибка проверки игрока:', error);
-    res.status(500).json({ error: 'Ошибка проверки игрока' });
-  }
 });
+
 
 // Socket.IO
 io.on('connection', (socket) => {
   console.log('Новое подключение:', socket.id);
-  
-  // Восстановление соединения
-  socket.on('reconnectPlayer', ({ playerId }) => {
+
+
+
+ // Восстановление соединения
+socket.on('reconnectPlayer', ({ playerId }) => {
     console.log('Попытка восстановления игрока:', playerId);
     
-    // Проверяем в играх
+    // Сначала проверяем в играх
     const gameId = playerGameMap.get(playerId);
     if (gameId) {
-      const game = games.get(gameId);
-      if (game) {
-        const player = game.players.find(p => p.id === playerId);
-        if (player) {
-          // Обновляем socketId
-          player.socketId = socket.id;
-          activePlayers.set(socket.id, player);
-          
-          socket.join(gameId);
-          
-          socket.emit('reconnectSuccess', {
-            type: 'game',
-            gameId: gameId,
-            disaster: game.disaster,
-            bunker: game.bunker,
-            player: player,
-            players: game.players
-          });
-          
-          console.log('Игрок восстановлен в игре:', player.name);
-          return;
+        const game = games.get(gameId);
+        if (game) {
+            const player = game.players.find(p => p.id === playerId);
+            if (player) {
+                // Обновляем socketId
+                player.socketId = socket.id;
+                activePlayers.set(socket.id, player);
+                
+                socket.join(gameId);
+                
+                socket.emit('reconnectSuccess', {
+                    type: 'game',
+                    gameId: gameId,
+                    disaster: game.disaster,
+                    bunker: game.bunker,
+                    player: player,
+                    players: game.players
+                });
+                
+                console.log('Игрок восстановлен в игре:', player.name);
+                return;
+            }
         }
-      }
     }
     
-    // Проверяем в лобби
+    // Затем проверяем в лобби (даже если игра началась)
     for (const [lId, lobby] of lobbies) {
-      const player = lobby.players.find(p => p.id === playerId);
-      if (player) {
-        // Обновляем socketId
-        player.socketId = socket.id;
-        activePlayers.set(socket.id, player);
-        
-        socket.join(lId);
-        
-        socket.emit('reconnectSuccess', {
-          type: 'lobby',
-          lobbyId: lId,
-          player: player,
-          players: lobby.players
-        });
-        
-        // Уведомляем всех
-        io.to(lId).emit('lobbyUpdate', { players: lobby.players });
-        
-        console.log('Игрок восстановлен в лобби:', player.name);
-        return;
-      }
+        const player = lobby.players.find(p => p.id === playerId);
+        if (player) {
+            // Обновляем socketId
+            player.socketId = socket.id;
+            activePlayers.set(socket.id, player);
+            
+            socket.join(lId);
+            
+            // Если у лобби есть игра, отправляем данные игры
+            if (lobby.gameId) {
+                const game = games.get(lobby.gameId);
+                if (game) {
+                    socket.emit('reconnectSuccess', {
+                        type: 'game',
+                        gameId: lobby.gameId,
+                        disaster: game.disaster,
+                        bunker: game.bunker,
+                        player: player,
+                        players: game.players
+                    });
+                } else {
+                    socket.emit('reconnectSuccess', {
+                        type: 'lobby',
+                        lobbyId: lId,
+                        player: player,
+                        players: lobby.players
+                    });
+                }
+            } else {
+                socket.emit('reconnectSuccess', {
+                    type: 'lobby',
+                    lobbyId: lId,
+                    player: player,
+                    players: lobby.players
+                });
+            }
+            
+            // Уведомляем всех об обновлении
+            io.to(lId).emit('lobbyUpdate', { players: lobby.players });
+            
+            console.log('Игрок восстановлен в лобби:', player.name);
+            return;
+        }
     }
     
     // Если ничего не найдено
     socket.emit('reconnectFailed', { message: 'Игрок не найден' });
-  });
+});
   
   socket.on('joinLobby', ({ lobbyId, playerName }) => {
     console.log('Попытка входа в лобби:', lobbyId, playerName);
@@ -380,47 +405,51 @@ io.on('connection', (socket) => {
     console.log('Игрок присоединился:', playerName);
   });
   
-  socket.on('startGame', ({ lobbyId }) => {
+socket.on('startGame', ({ lobbyId }) => {
     const lobby = lobbies.get(lobbyId);
     if (!lobby) return;
     
     if (lobby.players.length < 4) {
-      socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
-      return;
+        socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
+        return;
     }
     
     const gameId = uuidv4();
     const game = {
-      id: gameId,
-      disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
-      bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
-      players: lobby.players,
-      status: 'active',
-      created: Date.now()
+        id: gameId,
+        disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
+        bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
+        players: lobby.players,
+        status: 'active',
+        created: Date.now(),
+        lobbyId: lobbyId // Сохраняем ссылку на лобби
     };
     
     games.set(gameId, game);
     
+    // Обновляем статус лобби, но НЕ УДАЛЯЕМ его
+    lobby.status = 'game_started';
+    lobby.gameId = gameId;
+    
     // Сохраняем связь для каждого игрока
     game.players.forEach(player => {
-      playerGameMap.set(player.id, gameId);
+        playerGameMap.set(player.id, gameId);
     });
     
-    lobbies.delete(lobbyId);
-    
     game.players.forEach(player => {
-      io.to(player.socketId).emit('gameStarted', {
-        gameId: game.id,
-        disaster: game.disaster,
-        bunker: game.bunker,
-        player: player,
-        players: game.players
-      });
+        io.to(player.socketId).emit('gameStarted', {
+            gameId: game.id,
+            disaster: game.disaster,
+            bunker: game.bunker,
+            player: player,
+            players: game.players
+        });
     });
     
     saveData(); // Сохраняем изменения
     console.log('Игра создана:', gameId);
-  });
+    console.log('Лобби сохранено:', lobbyId);
+});
   
   socket.on('revealCharacteristic', ({ gameId, characteristic }) => {
     const game = games.get(gameId);
