@@ -6,16 +6,58 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
+
+// Настройка CORS для конкретного домена
 const io = socketIo(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: ["http://a1230559.xsph.ru", "http://localhost", "http://localhost:3000", "http://127.0.0.1:5500"],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
-app.use(cors());
+// Настройка CORS для Express
+app.use(cors({
+  origin: ["http://a1230559.xsph.ru", "http://localhost", "http://localhost:3000", "http://127.0.0.1:5500"],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.static('public'));
+
+// Добавляем обработку корневого маршрута для проверки работы сервера
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'Bunker Game Server is running' });
+});
+
+// Добавляем API маршруты
+app.post('/api/create-lobby', (req, res) => {
+  try {
+    const lobbyId = uuidv4().substring(0, 6).toUpperCase();
+    lobbies.set(lobbyId, {
+      id: lobbyId,
+      players: [],
+      created: Date.now()
+    });
+    
+    console.log('Лобби создано:', lobbyId);
+    res.json({ lobbyId });
+  } catch (error) {
+    console.error('Ошибка создания лобби:', error);
+    res.status(500).json({ error: 'Ошибка создания лобби' });
+  }
+});
+
+app.get('/api/check-lobby/:lobbyId', (req, res) => {
+  try {
+    const { lobbyId } = req.params;
+    const lobby = lobbies.get(lobbyId);
+    res.json({ exists: !!lobby });
+  } catch (error) {
+    console.error('Ошибка проверки лобби:', error);
+    res.status(500).json({ error: 'Ошибка проверки лобби' });
+  }
+});
 
 // Хранилище данных
 const games = new Map();
@@ -184,11 +226,21 @@ function createGame(lobbyId) {
   return game;
 }
 
+// Очистка старых лобби (каждый час)
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, lobby] of lobbies) {
+    if (now - lobby.created > 3600000) { // 1 час
+      lobbies.delete(id);
+    }
+  }
+}, 3600000);
+
 // Socket.IO подключения
 io.on('connection', (socket) => {
   console.log('Новое подключение:', socket.id);
   
-  // Создание лобби
+  // Создание лобби через socket (дублируем для совместимости)
   socket.on('createLobby', () => {
     const lobbyId = uuidv4().substring(0, 6).toUpperCase();
     lobbies.set(lobbyId, {
