@@ -23,6 +23,15 @@ app.use(cors({
 
 app.use(express.json());
 
+// Корневой маршрут для проверки работы сервера
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Bunker Game Server is running',
+    time: new Date().toISOString()
+  });
+});
+
 // Хранилища данных
 const games = new Map();        // Активные игры
 const lobbies = new Map();      // Лобби
@@ -134,7 +143,16 @@ app.post('/api/create-lobby', (req, res) => {
   }
 });
 
-
+app.get('/api/check-lobby/:lobbyId', (req, res) => {
+  try {
+    const { lobbyId } = req.params;
+    const lobby = lobbies.get(lobbyId);
+    res.json({ exists: !!lobby });
+  } catch (error) {
+    console.error('Ошибка проверки лобби:', error);
+    res.status(500).json({ error: 'Ошибка проверки лобби' });
+  }
+});
 
 // API для проверки активной игры по ID игрока
 app.get('/api/check-game/:playerId', (req, res) => {
