@@ -206,6 +206,8 @@ function generatePlayer(name, socketId) {
     id: uuidv4(),
     socketId,
     name,
+    status: 'active', // active, exiled, dead
+    statusMessage: null, // 'ИЗГНАН', 'МЕРТВ'
     characteristics: {
       gender: { value: `${gender} (${age} лет)`, revealed: false },
       bodyType: { value: GAME_DATA.characteristics.bodyTypes[Math.floor(Math.random() * GAME_DATA.characteristics.bodyTypes.length)], revealed: false },
@@ -221,7 +223,7 @@ function generatePlayer(name, socketId) {
 
   // Сохраняем в постоянное хранилище
   playersDataMap.set(player.id, player);
-  saveData(); // Сохраняем сразу
+  saveData();
 
   return player;
 }
@@ -569,6 +571,111 @@ socket.on('joinLobby', ({ lobbyId, playerName, isCreator }) => {
 
     saveData();
   });
+
+  // Обновление статуса игрока (изгнать, мертв, вернуть)
+socket.on('updatePlayerStatus', ({ lobbyId, targetPlayerId, action }) => {
+  console.log('Обновление статуса игрока:', targetPlayerId, action);
+
+  const lobby = lobbies.get(lobbyId);
+  if (!lobby) {
+    socket.emit('error', 'Лобби не найдено');
+    return;
+  }
+
+  // Проверяем, что отправитель является создателем
+  const creator = lobby.players.find(p => p.id === lobby.creator);
+  const sender = lobby.players.find(p => p.socketId === socket.id);
+
+  if (!sender || sender.id !== lobby.creator) {
+    socket.emit('error', 'Только создатель может изменять статус игроков');
+    return;
+  }
+
+  // Находим целевого игрока
+  const targetPlayer = lobby.players.find(p => p.id === targetPlayerId);
+  if (!targetPlayer) {
+    socket.emit('error', 'Игрок не найден');
+    return;
+  }
+
+  // Нельзя менять статус создателя
+  if (targetPlayer.id === lobby.creator) {
+    socket.emit('error', 'Нельзя изменить статус создателя');
+    return;
+  }
+
+  switch (action) {
+    case 'exile':
+      targetPlayer.status = 'exiled';
+      targetPlayer.statusMessage = 'ИЗГНАН';
+      console.log('Игрок изгнан:', targetPlayer.name);
+      break;
+    case 'kill':
+      targetPlayer.status = 'dead';
+      targetPlayer.statusMessage = 'МЕРТВ';
+      console.log('Игрок мертв:', targetPlayer.name);
+      break;
+    case 'revive':
+      targetPlayer.status = 'active';
+      targetPlayer.statusMessage = null;
+      console.log('Игрок возвращен:', targetPlayer.name);
+      break;
+    default:
+      socket.emit('error', 'Неизвестное действие');
+      return;
+  }
+
+  // Сохраняем изменения
+  saveData();
+
+  // Уведомляем всех об обновлении
+  io.to(lobbyId).emit('playerStatusUpdated', {
+    playerId: targetPlayerId,
+    status: targetPlayer.status,
+    statusMessage: targetPlayer.statusMessage
+  });
+});
+
+// Передача прав создателя
+socket.on('transferCreatorRights', ({ lobbyId, newCreatorId }) => {
+  console.log('Передача прав создателя:', newCreatorId);
+
+  const lobby = lobbies.get(lobbyId);
+  if (!lobby) {
+    socket.emit('error', 'Лобби не найдено');
+    return;
+  }
+
+  // Проверяем, что отправитель является текущим создателем
+  const sender = lobby.players.find(p => p.socketId === socket.id);
+  if (!sender || sender.id !== lobby.creator) {
+    socket.emit('error', 'Только создатель может передавать права');
+    return;
+  }
+
+  // Находим нового создателя
+  const newCreator = lobby.players.find(p => p.id === newCreatorId);
+  if (!newCreator) {
+    socket.emit('error', 'Игрок не найден');
+    return;
+  }
+
+  // Меняем создателя
+  const oldCreatorId = lobby.creator;
+  lobby.creator = newCreatorId;
+
+  // Сохраняем изменения
+  saveData();
+
+  // Уведомляем всех о смене создателя
+  io.to(lobbyId).emit('creatorChanged', {
+    oldCreatorId: oldCreatorId,
+    newCreatorId: newCreatorId,
+    newCreatorName: newCreator.name
+  });
+
+  console.log('Права создателя переданы от', oldCreatorId, 'к', newCreatorId);
+});
 
   socket.on('disconnect', () => {
     console.log('Отключение:', socket.id);
