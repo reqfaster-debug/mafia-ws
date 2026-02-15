@@ -824,6 +824,236 @@ socket.emit('gameData', {
   });
 });
 
+
+// ============ НОВЫЕ ФУНКЦИИ ДЛЯ ЗДОРОВЬЯ ============
+function getRandomHealth() {
+  const healthBase = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
+  if (healthBase.name === 'Здоров') {
+    return 'Здоров';
+  }
+  const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+  return `${healthBase.name} (${severity})`;
+}
+
+function getRandomSeverity() {
+  return HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+}
+
+function extractHealthName(healthString) {
+  // Из строки "Диабет (средняя)" получаем "Диабет"
+  const match = healthString.match(/^([^(]+)/);
+  return match ? match[1].trim() : healthString;
+}
+// ====================================================
+
+// ============ НОВЫЕ ОБРАБОТЧИКИ ============
+socket.on('improveHealth', ({ gameId, playerId }) => {
+  const game = games.get(gameId);
+  if (!game) {
+    socket.emit('error', 'Игра не найдена');
+    return;
+  }
+
+  // Проверяем, что инициатор - создатель
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
+    socket.emit('error', 'Только создатель может улучшать здоровье');
+    return;
+  }
+
+  const targetPlayer = game.players.find(p => p.id === playerId);
+  if (!targetPlayer) {
+    socket.emit('error', 'Игрок не найден');
+    return;
+  }
+
+  const currentHealth = targetPlayer.characteristics.health.value;
+  
+  // Если здоров - ничего не делаем
+  if (currentHealth === 'Здоров') {
+    socket.emit('error', 'Игрок уже здоров');
+    return;
+  }
+
+  // Парсим текущее здоровье
+  const healthMatch = currentHealth.match(/^(.+?)\s*\((\w+)\)$/);
+  if (!healthMatch) {
+    socket.emit('error', 'Ошибка формата здоровья');
+    return;
+  }
+
+  const diseaseName = healthMatch[1];
+  const currentSeverity = healthMatch[2];
+  
+  // Определяем индекс текущей степени
+  const severityIndex = HEALTH_SEVERITIES.indexOf(currentSeverity);
+  
+  // Улучшаем (уменьшаем тяжесть)
+  if (severityIndex > 0) {
+    // Переводим на менее тяжелую степень
+    const newSeverity = HEALTH_SEVERITIES[severityIndex - 1];
+    targetPlayer.characteristics.health.value = `${diseaseName} (${newSeverity})`;
+  } else {
+    // Была легкая - делаем здоровым
+    targetPlayer.characteristics.health.value = 'Здоров';
+  }
+
+  // Обновляем игру
+  games.set(gameId, game);
+  emitGameUpdateFixed(gameId);
+  saveData();
+  
+  console.log(`Создатель улучшил здоровье игрока ${targetPlayer.name}`);
+});
+
+socket.on('worsenHealth', ({ gameId, playerId }) => {
+  const game = games.get(gameId);
+  if (!game) {
+    socket.emit('error', 'Игра не найдена');
+    return;
+  }
+
+  // Проверяем, что инициатор - создатель
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
+    socket.emit('error', 'Только создатель может ухудшать здоровье');
+    return;
+  }
+
+  const targetPlayer = game.players.find(p => p.id === playerId);
+  if (!targetPlayer) {
+    socket.emit('error', 'Игрок не найден');
+    return;
+  }
+
+  const currentHealth = targetPlayer.characteristics.health.value;
+  
+  // Если здоров - даем случайную болезнь с легкой степенью
+  if (currentHealth === 'Здоров') {
+    const randomDisease = GAME_DATA.characteristics.health.filter(h => h.name !== 'Здоров');
+    const disease = randomDisease[Math.floor(Math.random() * randomDisease.length)];
+    targetPlayer.characteristics.health.value = `${disease.name} (легкая)`;
+  } else {
+    // Парсим текущее здоровье
+    const healthMatch = currentHealth.match(/^(.+?)\s*\((\w+)\)$/);
+    if (!healthMatch) {
+      socket.emit('error', 'Ошибка формата здоровья');
+      return;
+    }
+
+    const diseaseName = healthMatch[1];
+    const currentSeverity = healthMatch[2];
+    
+    // Определяем индекс текущей степени
+    const severityIndex = HEALTH_SEVERITIES.indexOf(currentSeverity);
+    
+    // Ухудшаем (увеличиваем тяжесть)
+    if (severityIndex < HEALTH_SEVERITIES.length - 1) {
+      const newSeverity = HEALTH_SEVERITIES[severityIndex + 1];
+      targetPlayer.characteristics.health.value = `${diseaseName} (${newSeverity})`;
+    } else {
+      // Уже критическая - ничего не делаем
+      socket.emit('error', 'Достигнута максимальная степень тяжести');
+      return;
+    }
+  }
+
+  // Обновляем игру
+  games.set(gameId, game);
+  emitGameUpdateFixed(gameId);
+  saveData();
+  
+  console.log(`Создатель ухудшил здоровье игрока ${targetPlayer.name}`);
+});
+
+socket.on('changeHealth', ({ gameId, playerId, action, diseaseName, severity }) => {
+  const game = games.get(gameId);
+  if (!game) {
+    socket.emit('error', 'Игра не найдена');
+    return;
+  }
+
+  // Проверяем, что инициатор - создатель
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
+    socket.emit('error', 'Только создатель может изменять здоровье');
+    return;
+  }
+
+  const targetPlayer = game.players.find(p => p.id === playerId);
+  if (!targetPlayer) {
+    socket.emit('error', 'Игрок не найден');
+    return;
+  }
+
+  let newHealthValue;
+
+  switch (action) {
+    case 'random':
+      newHealthValue = getRandomHealth();
+      break;
+    
+    case 'select':
+      if (!diseaseName) {
+        socket.emit('error', 'Не выбрана болезнь');
+        return;
+      }
+      if (diseaseName === 'Здоров') {
+        newHealthValue = 'Здоров';
+      } else {
+        const severity = severity || getRandomSeverity();
+        newHealthValue = `${diseaseName} (${severity})`;
+      }
+      break;
+    
+    case 'add':
+      if (!diseaseName) {
+        socket.emit('error', 'Не выбрана болезнь');
+        return;
+      }
+      
+      const currentHealth = targetPlayer.characteristics.health.value;
+      let diseases = [];
+      
+      // Если текущее здоровье не "Здоров" и не пустое, парсим существующие болезни
+      if (currentHealth !== 'Здоров' && currentHealth) {
+        // Простой парсинг - предполагаем формат "Болезнь1 (степень), Болезнь2 (степень)"
+        const diseaseMatches = currentHealth.matchAll(/([^,]+?)\s*\((\w+)\)/g);
+        for (const match of diseaseMatches) {
+          diseases.push({
+            name: match[1].trim(),
+            severity: match[2]
+          });
+        }
+      }
+      
+      // Добавляем новую болезнь
+      diseases.push({
+        name: diseaseName,
+        severity: severity || getRandomSeverity()
+      });
+      
+      // Формируем строку со всеми болезнями
+      newHealthValue = diseases.map(d => `${d.name} (${d.severity})`).join(', ');
+      break;
+    
+    default:
+      socket.emit('error', 'Неизвестное действие');
+      return;
+  }
+
+  targetPlayer.characteristics.health.value = newHealthValue;
+
+  // Обновляем игру
+  games.set(gameId, game);
+  emitGameUpdateFixed(gameId);
+  saveData();
+  
+  console.log(`Создатель изменил здоровье игрока ${targetPlayer.name} на ${newHealthValue}`);
+});
+// ====================================================
+
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
