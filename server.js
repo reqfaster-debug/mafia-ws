@@ -28,6 +28,7 @@ const games = new Map();        // Активные игры
 const lobbies = new Map();      // Лобби
 const players = new Map();      // Активные игроки (socketId -> playerData)
 const playerGames = new Map();   // Связь playerId -> gameId (для переподключения)
+const playerData = new Map();    // Постоянное хранение данных игроков (playerId -> playerData)
 
 // Массивы данных
 const GAME_DATA = {
@@ -92,7 +93,7 @@ function generatePlayer(name, socketId) {
   const experience = Math.floor(Math.random() * 30) + 1;
   const health = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
   
-  return {
+  const player = {
     id: uuidv4(),
     socketId,
     name,
@@ -108,6 +109,11 @@ function generatePlayer(name, socketId) {
       extra: { value: GAME_DATA.characteristics.extras[Math.floor(Math.random() * GAME_DATA.characteristics.extras.length)], revealed: false }
     }
   };
+  
+  // Сохраняем данные игрока в постоянном хранилище
+  playerData.set(player.id, player);
+  
+  return player;
 }
 
 // API маршруты
@@ -148,6 +154,7 @@ app.get('/api/check-game/:playerId', (req, res) => {
     if (gameId) {
       const game = games.get(gameId);
       if (game) {
+        // Ищем игрока в игре
         const player = game.players.find(p => p.id === playerId);
         if (player) {
           res.json({
@@ -165,10 +172,41 @@ app.get('/api/check-game/:playerId', (req, res) => {
       }
     }
     
+    // Если не нашли в активных играх, проверяем в лобби
+    for (const [lobbyId, lobby] of lobbies) {
+      const player = lobby.players.find(p => p.id === playerId);
+      if (player) {
+        res.json({
+          active: true,
+          lobbyId: lobbyId,
+          player: player,
+          inLobby: true
+        });
+        return;
+      }
+    }
+    
     res.json({ active: false });
   } catch (error) {
     console.error('Ошибка проверки игры:', error);
     res.status(500).json({ error: 'Ошибка проверки игры' });
+  }
+});
+
+// API для получения данных игрока
+app.get('/api/player/:playerId', (req, res) => {
+  try {
+    const { playerId } = req.params;
+    const player = playerData.get(playerId);
+    
+    if (player) {
+      res.json({ found: true, player });
+    } else {
+      res.json({ found: false });
+    }
+  } catch (error) {
+    console.error('Ошибка получения игрока:', error);
+    res.status(500).json({ error: 'Ошибка получения игрока' });
   }
 });
 
@@ -186,7 +224,18 @@ io.on('connection', (socket) => {
       return;
     }
     
-    const player = game.players.find(p => p.id === playerId);
+    // Ищем игрока в игре
+    let player = game.players.find(p => p.id === playerId);
+    
+    // Если не нашли, пробуем получить из постоянного хранилища
+    if (!player) {
+      const savedPlayer = playerData.get(playerId);
+      if (savedPlayer) {
+        player = savedPlayer;
+        game.players.push(player);
+      }
+    }
+    
     if (!player) {
       socket.emit('error', 'Игрок не найден');
       return;
@@ -214,6 +263,53 @@ io.on('connection', (socket) => {
     });
     
     console.log('Игрок переподключился:', player.name);
+  });
+  
+  // Переподключение к лобби
+  socket.on('reconnectToLobby', ({ playerId, lobbyId }) => {
+    console.log('Попытка переподключения к лобби:', playerId, lobbyId);
+    
+    const lobby = lobbies.get(lobbyId);
+    if (!lobby) {
+      socket.emit('error', 'Лобби не найдено');
+      return;
+    }
+    
+    // Ищем игрока в лобби
+    let player = lobby.players.find(p => p.id === playerId);
+    
+    // Если не нашли, пробуем получить из постоянного хранилища
+    if (!player) {
+      const savedPlayer = playerData.get(playerId);
+      if (savedPlayer) {
+        player = savedPlayer;
+        player.socketId = socket.id;
+        lobby.players.push(player);
+      }
+    }
+    
+    if (!player) {
+      socket.emit('error', 'Игрок не найден');
+      return;
+    }
+    
+    // Обновляем socketId
+    player.socketId = socket.id;
+    players.set(socket.id, player);
+    
+    socket.join(lobbyId);
+    
+    // Отправляем игроку данные лобби
+    socket.emit('lobbyReconnected', {
+      lobbyId: lobbyId,
+      player: player,
+      players: lobby.players
+    });
+    
+    // Уведомляем всех об обновлении
+    io.to(lobbyId).emit('lobbyUpdate', { players: lobby.players });
+    
+    console.log('Игрок переподключился к лобби:', player.name);
   });
   
   socket.on('joinLobby', ({ lobbyId, playerName }) => {
@@ -290,6 +386,12 @@ io.on('connection', (socket) => {
     
     player.characteristics[characteristic].revealed = true;
     
+    // Обновляем в постоянном хранилище
+    const savedPlayer = playerData.get(player.id);
+    if (savedPlayer) {
+      savedPlayer.characteristics[characteristic].revealed = true;
+    }
+    
     game.players.forEach(p => {
       io.to(p.socketId).emit('characteristicRevealed', {
         playerId: player.id,
@@ -305,8 +407,8 @@ io.on('connection', (socket) => {
     const player = players.get(socket.id);
     if (player) {
       // Не удаляем данные игрока, чтобы он мог переподключиться
-      players.delete(socket.id);
       console.log('Игрок отключился:', player.name);
+      players.delete(socket.id);
     }
   });
 });
