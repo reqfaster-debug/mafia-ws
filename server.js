@@ -33,70 +33,70 @@ const PLAYERS_FILE = path.join(DATA_DIR, 'players.json');
 
 // Создаем директорию для данных, если её нет
 async function ensureDataDir() {
-    try {
-        await fs.mkdir(DATA_DIR, { recursive: true });
-    } catch (error) {
-        console.error('Ошибка создания директории:', error);
-    }
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+  } catch (error) {
+    console.error('Ошибка создания директории:', error);
+  }
 }
 
 // Загрузка данных из файлов
 async function loadData() {
+  try {
+    await ensureDataDir();
+
+    // Загружаем игры
     try {
-        await ensureDataDir();
-        
-        // Загружаем игры
-        try {
-            const gamesData = await fs.readFile(GAMES_FILE, 'utf8');
-            games = new Map(JSON.parse(gamesData));
-        } catch (error) {
-            games = new Map();
-        }
-        
-        // Загружаем лобби
-        try {
-            const lobbiesData = await fs.readFile(LOBBIES_FILE, 'utf8');
-            lobbies = new Map(JSON.parse(lobbiesData));
-        } catch (error) {
-            lobbies = new Map();
-        }
-        
-        // Загружаем игроков
-        try {
-            const playersData = await fs.readFile(PLAYERS_FILE, 'utf8');
-            const playersArray = JSON.parse(playersData);
-            playersDataMap = new Map(playersArray);
-        } catch (error) {
-            playersDataMap = new Map();
-        }
-        
-        console.log('Данные загружены');
-        console.log('Игр:', games.size);
-        console.log('Лобби:', lobbies.size);
-        console.log('Игроков:', playersDataMap.size);
+      const gamesData = await fs.readFile(GAMES_FILE, 'utf8');
+      games = new Map(JSON.parse(gamesData));
     } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
+      games = new Map();
     }
+
+    // Загружаем лобби
+    try {
+      const lobbiesData = await fs.readFile(LOBBIES_FILE, 'utf8');
+      lobbies = new Map(JSON.parse(lobbiesData));
+    } catch (error) {
+      lobbies = new Map();
+    }
+
+    // Загружаем игроков
+    try {
+      const playersData = await fs.readFile(PLAYERS_FILE, 'utf8');
+      const playersArray = JSON.parse(playersData);
+      playersDataMap = new Map(playersArray);
+    } catch (error) {
+      playersDataMap = new Map();
+    }
+
+    console.log('Данные загружены');
+    console.log('Игр:', games.size);
+    console.log('Лобби:', lobbies.size);
+    console.log('Игроков:', playersDataMap.size);
+  } catch (error) {
+    console.error('Ошибка загрузки данных:', error);
+  }
 }
 
 // Сохранение данных в файлы
 async function saveData() {
-    try {
-        await ensureDataDir();
-        
-        // Сохраняем игры
-        await fs.writeFile(GAMES_FILE, JSON.stringify(Array.from(games.entries()), null, 2));
-        
-        // Сохраняем лобби
-        await fs.writeFile(LOBBIES_FILE, JSON.stringify(Array.from(lobbies.entries()), null, 2));
-        
-        // Сохраняем игроков
-        await fs.writeFile(PLAYERS_FILE, JSON.stringify(Array.from(playersDataMap.entries()), null, 2));
-        
-        console.log('Данные сохранены');
-    } catch (error) {
-        console.error('Ошибка сохранения данных:', error);
-    }
+  try {
+    await ensureDataDir();
+
+    // Сохраняем игры
+    await fs.writeFile(GAMES_FILE, JSON.stringify(Array.from(games.entries()), null, 2));
+
+    // Сохраняем лобби
+    await fs.writeFile(LOBBIES_FILE, JSON.stringify(Array.from(lobbies.entries()), null, 2));
+
+    // Сохраняем игроков
+    await fs.writeFile(PLAYERS_FILE, JSON.stringify(Array.from(playersDataMap.entries()), null, 2));
+
+    console.log('Данные сохранены');
+  } catch (error) {
+    console.error('Ошибка сохранения данных:', error);
+  }
 }
 
 // Хранилища данных
@@ -122,7 +122,7 @@ const GAME_DATA = {
     "Нашествие зомби. Мир погрузился в хаос.",
     "Климатическая катастрофа. Затопление большей части суши."
   ],
-  
+
   bunkers: [
     {
       "duration_years": 4,
@@ -145,7 +145,7 @@ const GAME_DATA = {
       "extra": "Большой запас еды, но проблемы с вентиляцией."
     }
   ],
-  
+
   characteristics: {
     genders: ['Мужской', 'Женский'],
     bodyTypes: ['Легкое', 'Атлетичное', 'Полное', 'Сильное ожирение'],
@@ -174,7 +174,7 @@ function generatePlayer(name, socketId) {
   const profession = GAME_DATA.characteristics.professions[Math.floor(Math.random() * GAME_DATA.characteristics.professions.length)];
   const experience = Math.floor(Math.random() * 30) + 1;
   const health = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
-  
+
   const player = {
     id: uuidv4(),
     socketId,
@@ -191,11 +191,11 @@ function generatePlayer(name, socketId) {
       extra: { value: GAME_DATA.characteristics.extras[Math.floor(Math.random() * GAME_DATA.characteristics.extras.length)], revealed: false }
     }
   };
-  
+
   // Сохраняем в постоянное хранилище
   playersDataMap.set(player.id, player);
   saveData(); // Сохраняем сразу
-  
+
   return player;
 }
 
@@ -208,7 +208,7 @@ app.post('/api/create-lobby', (req, res) => {
       players: [],
       created: Date.now()
     });
-    
+
     saveData(); // Сохраняем изменения
     console.log('Лобби создано:', lobbyId);
     res.json({ lobbyId });
@@ -230,63 +230,63 @@ app.get('/api/check-lobby/:lobbyId', (req, res) => {
 });
 
 app.get('/api/check-player/:playerId', (req, res) => {
-    try {
-        const { playerId } = req.params;
-        
-        // Проверяем в играх
-        const gameId = playerGameMap.get(playerId);
-        if (gameId) {
-            const game = games.get(gameId);
-            if (game) {
-                const player = game.players.find(p => p.id === playerId);
-                if (player) {
-                    return res.json({
-                        active: true,
-                        type: 'game',
-                        gameId: gameId,
-                        lobbyId: game.lobbyId, // Теперь есть lobbyId
-                        player: player,
-                        gameData: {
-                            disaster: game.disaster,
-                            bunker: game.bunker,
-                            players: game.players
-                        }
-                    });
-                }
+  try {
+    const { playerId } = req.params;
+
+    // Проверяем в играх
+    const gameId = playerGameMap.get(playerId);
+    if (gameId) {
+      const game = games.get(gameId);
+      if (game) {
+        const player = game.players.find(p => p.id === playerId);
+        if (player) {
+          return res.json({
+            active: true,
+            type: 'game',
+            gameId: gameId,
+            lobbyId: game.lobbyId, // Теперь есть lobbyId
+            player: player,
+            gameData: {
+              disaster: game.disaster,
+              bunker: game.bunker,
+              players: game.players
             }
+          });
         }
-        
-        // Проверяем в лобби (даже если игра началась)
-        for (const [lId, lobby] of lobbies) {
-            const player = lobby.players.find(p => p.id === playerId);
-            if (player) {
-                return res.json({
-                    active: true,
-                    type: lobby.gameId ? 'game_started' : 'lobby',
-                    gameId: lobby.gameId,
-                    lobbyId: lId,
-                    player: player,
-                    players: lobby.players
-                });
-            }
-        }
-        
-        // Проверяем в постоянном хранилище
-        const savedPlayer = playersDataMap.get(playerId);
-        if (savedPlayer) {
-            return res.json({
-                active: false,
-                saved: true,
-                player: savedPlayer
-            });
-        }
-        
-        res.json({ active: false });
-        
-    } catch (error) {
-        console.error('Ошибка проверки игрока:', error);
-        res.status(500).json({ error: 'Ошибка проверки игрока' });
+      }
     }
+
+    // Проверяем в лобби (даже если игра началась)
+    for (const [lId, lobby] of lobbies) {
+      const player = lobby.players.find(p => p.id === playerId);
+      if (player) {
+        return res.json({
+          active: true,
+          type: lobby.gameId ? 'game_started' : 'lobby',
+          gameId: lobby.gameId,
+          lobbyId: lId,
+          player: player,
+          players: lobby.players
+        });
+      }
+    }
+
+    // Проверяем в постоянном хранилище
+    const savedPlayer = playersDataMap.get(playerId);
+    if (savedPlayer) {
+      return res.json({
+        active: false,
+        saved: true,
+        player: savedPlayer
+      });
+    }
+
+    res.json({ active: false });
+
+  } catch (error) {
+    console.error('Ошибка проверки игрока:', error);
+    res.status(500).json({ error: 'Ошибка проверки игрока' });
+  }
 });
 
 
@@ -296,176 +296,199 @@ io.on('connection', (socket) => {
 
 
 
- // Восстановление соединения
-socket.on('reconnectPlayer', ({ playerId }) => {
+  // Восстановление соединения
+  socket.on('reconnectPlayer', ({ playerId }) => {
     console.log('Попытка восстановления игрока:', playerId);
-    
+
+    // Проверяем, есть ли уже активное соединение
+    const existingSocket = [...activePlayers.entries()].find(([sid, p]) => p.id === playerId);
+    if (existingSocket) {
+      console.log('Игрок уже активен, отключаем старый socket');
+      const [oldSocketId] = existingSocket;
+      const oldSocket = io.sockets.sockets.get(oldSocketId);
+      if (oldSocket) {
+        oldSocket.disconnect();
+      }
+      activePlayers.delete(oldSocketId);
+    }
+
     // Сначала проверяем в играх
     const gameId = playerGameMap.get(playerId);
     if (gameId) {
-        const game = games.get(gameId);
-        if (game) {
-            const player = game.players.find(p => p.id === playerId);
-            if (player) {
-                // Обновляем socketId
-                player.socketId = socket.id;
-                activePlayers.set(socket.id, player);
-                
-                socket.join(gameId);
-                
-                socket.emit('reconnectSuccess', {
-                    type: 'game',
-                    gameId: gameId,
-                    disaster: game.disaster,
-                    bunker: game.bunker,
-                    player: player,
-                    players: game.players
-                });
-                
-                console.log('Игрок восстановлен в игре:', player.name);
-                return;
-            }
-        }
-    }
-    
-    // Затем проверяем в лобби (даже если игра началась)
-    for (const [lId, lobby] of lobbies) {
-        const player = lobby.players.find(p => p.id === playerId);
+      const game = games.get(gameId);
+      if (game) {
+        const player = game.players.find(p => p.id === playerId);
         if (player) {
-            // Обновляем socketId
-            player.socketId = socket.id;
-            activePlayers.set(socket.id, player);
-            
-            socket.join(lId);
-            
-            // Если у лобби есть игра, отправляем данные игры
-            if (lobby.gameId) {
-                const game = games.get(lobby.gameId);
-                if (game) {
-                    socket.emit('reconnectSuccess', {
-                        type: 'game',
-                        gameId: lobby.gameId,
-                        disaster: game.disaster,
-                        bunker: game.bunker,
-                        player: player,
-                        players: game.players
-                    });
-                } else {
-                    socket.emit('reconnectSuccess', {
-                        type: 'lobby',
-                        lobbyId: lId,
-                        player: player,
-                        players: lobby.players
-                    });
-                }
-            } else {
-                socket.emit('reconnectSuccess', {
-                    type: 'lobby',
-                    lobbyId: lId,
-                    player: player,
-                    players: lobby.players
-                });
-            }
-            
-            // Уведомляем всех об обновлении
-            io.to(lId).emit('lobbyUpdate', { players: lobby.players });
-            
-            console.log('Игрок восстановлен в лобби:', player.name);
-            return;
+          // Обновляем socketId
+          player.socketId = socket.id;
+          activePlayers.set(socket.id, player);
+
+          socket.join(gameId);
+
+          socket.emit('reconnectSuccess', {
+            type: 'game',
+            gameId: gameId,
+            disaster: game.disaster,
+            bunker: game.bunker,
+            player: player,
+            players: game.players
+          });
+
+          console.log('Игрок восстановлен в игре:', player.name);
+          return;
         }
+      }
     }
-    
+
+    // Затем проверяем в лобби
+    for (const [lId, lobby] of lobbies) {
+      const player = lobby.players.find(p => p.id === playerId);
+      if (player) {
+        // Обновляем socketId
+        player.socketId = socket.id;
+        activePlayers.set(socket.id, player);
+
+        socket.join(lId);
+
+        socket.emit('reconnectSuccess', {
+          type: 'lobby',
+          lobbyId: lId,
+          player: player,
+          players: lobby.players
+        });
+
+        // Уведомляем всех об обновлении
+        io.to(lId).emit('lobbyUpdate', { players: lobby.players });
+
+        console.log('Игрок восстановлен в лобби:', player.name);
+        return;
+      }
+    }
+
+    // Если ничего не найдено, пробуем найти в сохраненных данных
+    const savedPlayer = playersDataMap.get(playerId);
+    if (savedPlayer) {
+      // Ищем лобби, где мог быть этот игрок
+      for (const [lId, lobby] of lobbies) {
+        if (lobby.players.some(p => p.id === playerId)) {
+          // Уже должно было найтись выше
+          continue;
+        }
+      }
+    }
+
     // Если ничего не найдено
     socket.emit('reconnectFailed', { message: 'Игрок не найден' });
-});
-  
+  });
+
+  // При новом подключении проверяем, не активен ли уже игрок
+  socket.on('checkPlayerActive', ({ playerId }) => {
+    const isActive = [...activePlayers.values()].some(p => p.id === playerId);
+    socket.emit('playerActiveCheck', { active: isActive });
+  });
+
   socket.on('joinLobby', ({ lobbyId, playerName }) => {
     console.log('Попытка входа в лобби:', lobbyId, playerName);
-    
+
     const lobby = lobbies.get(lobbyId);
     if (!lobby) {
       socket.emit('error', 'Лобби не найдено');
       return;
     }
-    
-    if (lobby.players.some(p => p.name === playerName)) {
-      socket.emit('error', 'Игрок с таким ником уже существует');
+
+    // Проверяем, есть ли уже игрок с таким ником
+    const existingPlayer = lobby.players.find(p => p.name === playerName);
+
+    if (existingPlayer) {
+      console.log('Игрок уже существует, обновляем соединение:', playerName);
+
+      // Обновляем socketId у существующего игрока
+      existingPlayer.socketId = socket.id;
+      activePlayers.set(socket.id, existingPlayer);
+
+      socket.join(lobbyId);
+      socket.emit('joinedLobby', { lobbyId, player: existingPlayer });
+
+      // Уведомляем всех об обновлении списка
+      io.to(lobbyId).emit('lobbyUpdate', { players: lobby.players });
+
       return;
     }
-    
+
+    // Если игрока нет - создаем нового
     const player = generatePlayer(playerName, socket.id);
     lobby.players.push(player);
     activePlayers.set(socket.id, player);
-    
+
     socket.join(lobbyId);
     socket.emit('joinedLobby', { lobbyId, player });
     io.to(lobbyId).emit('lobbyUpdate', { players: lobby.players });
-    
-    saveData(); // Сохраняем изменения
-    console.log('Игрок присоединился:', playerName);
+
+    saveData();
+    console.log('Новый игрок присоединился:', playerName);
   });
-  
-socket.on('startGame', ({ lobbyId }) => {
+
+  socket.on('startGame', ({ lobbyId }) => {
     const lobby = lobbies.get(lobbyId);
     if (!lobby) return;
-    
+
     if (lobby.players.length < 4) {
-        socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
-        return;
+      socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
+      return;
     }
-    
+
     const gameId = uuidv4();
     const game = {
-        id: gameId,
-        disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
-        bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
-        players: lobby.players,
-        status: 'active',
-        created: Date.now(),
-        lobbyId: lobbyId // Сохраняем ссылку на лобби
+      id: gameId,
+      disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
+      bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
+      players: lobby.players,
+      status: 'active',
+      created: Date.now(),
+      lobbyId: lobbyId // Сохраняем ссылку на лобби
     };
-    
+
     games.set(gameId, game);
-    
+
     // Обновляем статус лобби, но НЕ УДАЛЯЕМ его
     lobby.status = 'game_started';
     lobby.gameId = gameId;
-    
+
     // Сохраняем связь для каждого игрока
     game.players.forEach(player => {
-        playerGameMap.set(player.id, gameId);
+      playerGameMap.set(player.id, gameId);
     });
-    
+
     game.players.forEach(player => {
-        io.to(player.socketId).emit('gameStarted', {
-            gameId: game.id,
-            disaster: game.disaster,
-            bunker: game.bunker,
-            player: player,
-            players: game.players
-        });
+      io.to(player.socketId).emit('gameStarted', {
+        gameId: game.id,
+        disaster: game.disaster,
+        bunker: game.bunker,
+        player: player,
+        players: game.players
+      });
     });
-    
+
     saveData(); // Сохраняем изменения
     console.log('Игра создана:', gameId);
     console.log('Лобби сохранено:', lobbyId);
-});
-  
+  });
+
   socket.on('revealCharacteristic', ({ gameId, characteristic }) => {
     const game = games.get(gameId);
     if (!game) return;
-    
+
     const player = game.players.find(p => p.socketId === socket.id);
     if (!player) return;
-    
+
     player.characteristics[characteristic].revealed = true;
-    
+
     // Обновляем в постоянном хранилище
     const savedPlayer = playersDataMap.get(player.id);
     if (savedPlayer) {
       savedPlayer.characteristics[characteristic].revealed = true;
     }
-    
+
     game.players.forEach(p => {
       io.to(p.socketId).emit('characteristicRevealed', {
         playerId: player.id,
@@ -474,10 +497,10 @@ socket.on('startGame', ({ lobbyId }) => {
         revealedBy: player.name
       });
     });
-    
+
     saveData(); // Сохраняем изменения
   });
-  
+
   socket.on('disconnect', () => {
     console.log('Отключение:', socket.id);
     const player = activePlayers.get(socket.id);
