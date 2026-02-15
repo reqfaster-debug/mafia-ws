@@ -615,213 +615,142 @@ socket.on('getGameData', ({ gameId }) => {
 
 
 
-
-// В server.js, замени существующие обработчики на эти:
-
 socket.on('kickPlayer', ({ gameId, playerIdToKick }) => {
-  // Сначала проверяем в игре
-  let game = games.get(gameId);
-  let targetPlayer = null;
-  let sourcePlayer = null;
-  let isInGame = true;
-  
-  if (!game) {
-    // Если не в игре, проверяем в лобби
-    isInGame = false;
-    for (const [lId, lobby] of lobbies) {
-      if (lobby.gameId === gameId) {
-        game = lobby;
-        break;
-      }
-    }
-  }
-  
+  const game = games.get(gameId);
   if (!game) {
     socket.emit('error', 'Игра не найдена');
     return;
   }
 
   // Проверяем, что инициатор - создатель
-  sourcePlayer = game.players.find(p => p.socketId === socket.id);
-  if (!sourcePlayer || sourcePlayer.id !== game.creator) {
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
     socket.emit('error', 'Только создатель может изгонять игроков');
     return;
   }
 
   // Нельзя изгнать себя
-  if (sourcePlayer.id === playerIdToKick) {
+  if (initiator.id === playerIdToKick) {
     socket.emit('error', 'Нельзя изгнать себя');
     return;
   }
 
-  targetPlayer = game.players.find(p => p.id === playerIdToKick);
-  if (!targetPlayer) {
+  const playerToKick = game.players.find(p => p.id === playerIdToKick);
+  if (!playerToKick) {
     socket.emit('error', 'Игрок не найден');
     return;
   }
 
   // Добавляем статус "изгнан"
-  targetPlayer.status = 'kicked';
-  targetPlayer.statusMessage = 'изгнан';
+  playerToKick.status = 'kicked';
+  playerToKick.statusMessage = 'изгнан';
 
-  if (isInGame) {
-    // Обновляем в игре
-    games.set(gameId, game);
-    io.to(gameId).emit('gameUpdate', { 
-      players: game.players,
-      disaster: game.disaster,
-      bunker: game.bunker
-    });
-  } else {
-    // Обновляем в лобби
-    io.to(gameId).emit('lobbyUpdate', { 
-      players: game.players, 
-      creatorId: game.creator 
-    });
-  }
+  // Обновляем игру в хранилище
+  games.set(gameId, game);
+  
+  // ОТПРАВЛЯЕМ ОБНОВЛЕНИЕ ВСЕМ ИГРОКАМ В ИГРЕ
+  io.to(gameId).emit('gameUpdate', { 
+    players: game.players,
+    disaster: game.disaster,
+    bunker: game.bunker
+  });
 
   saveData();
-  console.log(`Игрок ${targetPlayer.name} изгнан создателем ${sourcePlayer.name}`);
+  console.log(`В игре ${gameId} игрок ${playerToKick.name} изгнан создателем ${initiator.name}`);
 });
 
 socket.on('markDead', ({ gameId, playerIdToMark }) => {
-  // Аналогичная логика для markDead
-  let game = games.get(gameId);
-  let targetPlayer = null;
-  let sourcePlayer = null;
-  let isInGame = true;
-  
-  if (!game) {
-    isInGame = false;
-    for (const [lId, lobby] of lobbies) {
-      if (lobby.gameId === gameId) {
-        game = lobby;
-        break;
-      }
-    }
-  }
-  
+  const game = games.get(gameId);
   if (!game) {
     socket.emit('error', 'Игра не найдена');
     return;
   }
 
-  sourcePlayer = game.players.find(p => p.socketId === socket.id);
-  if (!sourcePlayer || sourcePlayer.id !== game.creator) {
+  // Проверяем, что инициатор - создатель
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
     socket.emit('error', 'Только создатель может отмечать игроков мертвыми');
     return;
   }
 
-  if (sourcePlayer.id === playerIdToMark) {
+  // Нельзя отметить себя мертвым
+  if (initiator.id === playerIdToMark) {
     socket.emit('error', 'Нельзя отметить себя мертвым');
     return;
   }
 
-  targetPlayer = game.players.find(p => p.id === playerIdToMark);
-  if (!targetPlayer) {
+  const playerToMark = game.players.find(p => p.id === playerIdToMark);
+  if (!playerToMark) {
     socket.emit('error', 'Игрок не найден');
     return;
   }
 
-  targetPlayer.status = 'dead';
-  targetPlayer.statusMessage = 'мертв';
+  // Добавляем статус "мертв"
+  playerToMark.status = 'dead';
+  playerToMark.statusMessage = 'мертв';
 
-  if (isInGame) {
-    games.set(gameId, game);
-    io.to(gameId).emit('gameUpdate', { 
-      players: game.players,
-      disaster: game.disaster,
-      bunker: game.bunker
-    });
-  } else {
-    io.to(gameId).emit('lobbyUpdate', { 
-      players: game.players, 
-      creatorId: game.creator 
-    });
-  }
+  // Обновляем игру в хранилище
+  games.set(gameId, game);
+  
+  // ОТПРАВЛЯЕМ ОБНОВЛЕНИЕ ВСЕМ ИГРОКАМ В ИГРЕ
+  io.to(gameId).emit('gameUpdate', { 
+    players: game.players,
+    disaster: game.disaster,
+    bunker: game.bunker
+  });
 
   saveData();
-  console.log(`Игрок ${targetPlayer.name} отмечен мертвым создателем ${sourcePlayer.name}`);
+  console.log(`В игре ${gameId} игрок ${playerToMark.name} отмечен мертвым создателем ${initiator.name}`);
 });
 
 socket.on('restorePlayer', ({ gameId, playerIdToRestore }) => {
-  // Аналогичная логика для restorePlayer
-  let game = games.get(gameId);
-  let targetPlayer = null;
-  let sourcePlayer = null;
-  let isInGame = true;
-  
-  if (!game) {
-    isInGame = false;
-    for (const [lId, lobby] of lobbies) {
-      if (lobby.gameId === gameId) {
-        game = lobby;
-        break;
-      }
-    }
-  }
-  
+  const game = games.get(gameId);
   if (!game) {
     socket.emit('error', 'Игра не найдена');
     return;
   }
 
-  sourcePlayer = game.players.find(p => p.socketId === socket.id);
-  if (!sourcePlayer || sourcePlayer.id !== game.creator) {
+  // Проверяем, что инициатор - создатель
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
     socket.emit('error', 'Только создатель может восстанавливать игроков');
     return;
   }
 
-  targetPlayer = game.players.find(p => p.id === playerIdToRestore);
-  if (!targetPlayer) {
+  const playerToRestore = game.players.find(p => p.id === playerIdToRestore);
+  if (!playerToRestore) {
     socket.emit('error', 'Игрок не найден');
     return;
   }
 
-  delete targetPlayer.status;
-  delete targetPlayer.statusMessage;
+  // Убираем статус
+  delete playerToRestore.status;
+  delete playerToRestore.statusMessage;
 
-  if (isInGame) {
-    games.set(gameId, game);
-    io.to(gameId).emit('gameUpdate', { 
-      players: game.players,
-      disaster: game.disaster,
-      bunker: game.bunker
-    });
-  } else {
-    io.to(gameId).emit('lobbyUpdate', { 
-      players: game.players, 
-      creatorId: game.creator 
-    });
-  }
+  // Обновляем игру в хранилище
+  games.set(gameId, game);
+  
+  // ОТПРАВЛЯЕМ ОБНОВЛЕНИЕ ВСЕМ ИГРОКАМ В ИГРЕ
+  io.to(gameId).emit('gameUpdate', { 
+    players: game.players,
+    disaster: game.disaster,
+    bunker: game.bunker
+  });
 
   saveData();
-  console.log(`Игрок ${targetPlayer.name} восстановлен создателем ${sourcePlayer.name}`);
+  console.log(`В игре ${gameId} игрок ${playerToRestore.name} восстановлен создателем ${initiator.name}`);
 });
 
 socket.on('transferCreator', ({ gameId, newCreatorId }) => {
-  // Аналогичная логика для transferCreator
-  let game = games.get(gameId);
-  let sourcePlayer = null;
-  let isInGame = true;
-  
-  if (!game) {
-    isInGame = false;
-    for (const [lId, lobby] of lobbies) {
-      if (lobby.gameId === gameId) {
-        game = lobby;
-        break;
-      }
-    }
-  }
-  
+  const game = games.get(gameId);
   if (!game) {
     socket.emit('error', 'Игра не найдена');
     return;
   }
 
-  sourcePlayer = game.players.find(p => p.socketId === socket.id);
-  if (!sourcePlayer || sourcePlayer.id !== game.creator) {
+  // Проверяем, что инициатор - текущий создатель
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
     socket.emit('error', 'Только создатель может передавать права');
     return;
   }
@@ -832,26 +761,24 @@ socket.on('transferCreator', ({ gameId, newCreatorId }) => {
     return;
   }
 
+  // Передаем права
   game.creator = newCreatorId;
 
-  if (isInGame) {
-    games.set(gameId, game);
-    io.to(gameId).emit('gameUpdate', { 
-      players: game.players,
-      disaster: game.disaster,
-      bunker: game.bunker
-    });
-  } else {
-    io.to(gameId).emit('lobbyUpdate', { 
-      players: game.players, 
-      creatorId: game.creator 
-    });
-  }
+  // Обновляем игру в хранилище
+  games.set(gameId, game);
+  
+  // ОТПРАВЛЯЕМ ОБНОВЛЕНИЕ ВСЕМ ИГРОКАМ В ИГРЕ
+  io.to(gameId).emit('gameUpdate', { 
+    players: game.players,
+    disaster: game.disaster,
+    bunker: game.bunker
+  });
 
+  // Отправляем персональное уведомление новому создателю
   io.to(newCreator.socketId).emit('youAreNowCreator');
 
   saveData();
-  console.log(`Права создателя переданы от ${sourcePlayer.name} к ${newCreator.name}`);
+  console.log(`В игре ${gameId} права создателя переданы от ${initiator.name} к ${newCreator.name}`);
 });
 
 
