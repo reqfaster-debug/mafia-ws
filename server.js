@@ -192,8 +192,8 @@ const GAME_DATA = {
   characteristics: {
     genders: ['Мужской', 'Женский'],
     bodyTypes: ['Легкое', 'Атлетичное', 'Полное', 'Сильное ожирение'],
-    traits: ['Храбрый', 'Трусливый', 'Добрый', 'Злой', 'Щедрый', 'Жадный'],
-    hobbies: ['Рыбалка', 'Охота', 'Чтение', 'Спорт', 'Рисование', 'Музыка'],
+    traits: ['Храбрый', 'Трусливый', 'Добрый', 'Злой', 'Щедрый', 'Жадный', 'Честный', 'Лживый', 'Общительный', 'Замкнутый'],
+    hobbies: ['Рыбалка', 'Охота', 'Чтение', 'Спорт', 'Рисование', 'Музыка', 'Кулинария', 'Садоводство'],
     health: [
       { name: 'Здоров' },
       { name: 'Диабет' },
@@ -210,13 +210,16 @@ const GAME_DATA = {
       { name: 'Эпилепсия' },
       { name: 'Мигрень' }
     ],
-    inventory: ['Аптечка', 'Нож', 'Фонарик', 'Топор', 'Веревка', 'Спички'],
-    phobias: ['Клаустрофобия', 'Арахнофобия', 'Акрофобия'],
-    extras: ['Водительские права', 'Знание языков', 'Навыки выживания'],
+    inventory: ['Аптечка', 'Нож', 'Фонарик', 'Топор', 'Веревка', 'Спички', 'Палатка', 'Компас'],
+    phobias: ['Клаустрофобия', 'Арахнофобия', 'Акрофобия', 'Социофобия', 'Агорафобия'],
+    extras: ['Водительские права', 'Знание языков', 'Навыки выживания', 'Мед. образование', 'Пед. образование'],
     professions: [
       { name: 'Врач', description: 'Может лечить' },
       { name: 'Инженер', description: 'Может чинить' },
-      { name: 'Военный', description: 'Охрана бункера' }
+      { name: 'Военный', description: 'Охрана бункера' },
+      { name: 'Учитель', description: 'Может обучать' },
+      { name: 'Строитель', description: 'Может строить' },
+      { name: 'Повар', description: 'Может готовить' }
     ]
   }
 };
@@ -281,6 +284,52 @@ function extractHealthName(healthString) {
   return match ? match[1].trim() : healthString;
 }
 // ====================================================
+
+// ============ НОВЫЕ ФУНКЦИИ ДЛЯ ХАРАКТЕРИСТИК ============
+function getRandomValue(charKey) {
+  const charData = GAME_DATA.characteristics[charKey];
+  if (!charData) return '';
+  
+  if (charKey === 'profession') {
+    const prof = charData[Math.floor(Math.random() * charData.length)];
+    const experience = Math.floor(Math.random() * 30) + 1;
+    return `${prof.name} (стаж ${experience} лет) - ${prof.description}`;
+  }
+  
+  if (charKey === 'gender') {
+    const gender = charData[Math.floor(Math.random() * charData.length)];
+    const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
+    return `${gender} (${age} лет)`;
+  }
+  
+  return charData[Math.floor(Math.random() * charData.length)];
+}
+
+function parseCharacteristicValue(charKey, value) {
+  if (charKey === 'profession' || charKey === 'gender') {
+    return { main: value, items: [] };
+  }
+  
+  if (value && value.includes(',')) {
+    const items = value.split(',').map(s => s.trim());
+    return { main: items[0], items: items.slice(1) };
+  }
+  
+  return { main: value, items: [] };
+}
+
+function formatCharacteristicValue(charKey, mainValue, additionalItems = []) {
+  if (charKey === 'profession' || charKey === 'gender') {
+    return mainValue;
+  }
+  
+  if (additionalItems.length > 0) {
+    return [mainValue, ...additionalItems].join(', ');
+  }
+  
+  return mainValue;
+}
+// =========================================================
 
 // API маршруты
 app.post('/api/create-lobby', (req, res) => {
@@ -654,10 +703,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (initiator.id === playerIdToKick) {
-      socket.emit('error', 'Нельзя изгнать себя');
-      return;
-    }
+    // Разрешаем изгнать себя - убрана проверка
 
     const playerToKick = game.players.find(p => p.id === playerIdToKick);
     if (!playerToKick) {
@@ -687,10 +733,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (initiator.id === playerIdToMark) {
-      socket.emit('error', 'Нельзя отметить себя мертвым');
-      return;
-    }
+    // Разрешаем отметить себя мертвым - убрана проверка
 
     const playerToMark = game.players.find(p => p.id === playerIdToMark);
     if (!playerToMark) {
@@ -824,6 +867,11 @@ io.on('connection', (socket) => {
                 name: match[1].trim(),
                 severity: match[2]
               });
+            } else if (part !== 'Здоров') {
+              diseases.push({
+                name: part,
+                severity: 'легкая'
+              });
             }
           }
         }
@@ -850,6 +898,102 @@ io.on('connection', (socket) => {
     console.log(`Создатель изменил здоровье игрока ${targetPlayer.name} на ${newHealthValue}`);
   });
   // ====================================================
+
+  // ============ НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ХАРАКТЕРИСТИК ============
+  socket.on('changeCharacteristic', ({ gameId, playerId, characteristic, action, value, index }) => {
+    console.log('changeCharacteristic called:', { gameId, playerId, characteristic, action, value, index });
+    
+    const game = games.get(gameId);
+    if (!game) {
+      socket.emit('error', 'Игра не найдена');
+      return;
+    }
+
+    const initiator = game.players.find(p => p.socketId === socket.id);
+    if (!initiator || initiator.id !== game.creator) {
+      socket.emit('error', 'Только создатель может изменять характеристики');
+      return;
+    }
+
+    const targetPlayer = game.players.find(p => p.id === playerId);
+    if (!targetPlayer) {
+      socket.emit('error', 'Игрок не найден');
+      return;
+    }
+
+    const currentValue = targetPlayer.characteristics[characteristic].value;
+    const parsed = parseCharacteristicValue(characteristic, currentValue);
+    let newValue;
+
+    switch (action) {
+      case 'random':
+        newValue = getRandomValue(characteristic);
+        break;
+      
+      case 'select':
+        if (!value) {
+          socket.emit('error', 'Не выбрано значение');
+          return;
+        }
+        newValue = value;
+        break;
+      
+      case 'add':
+        if (!value) {
+          socket.emit('error', 'Не выбрано значение');
+          return;
+        }
+        if (characteristic === 'profession' || characteristic === 'gender') {
+          socket.emit('error', 'Нельзя добавлять к этой характеристике');
+          return;
+        }
+        newValue = formatCharacteristicValue(characteristic, parsed.main, [...parsed.items, value]);
+        break;
+      
+      case 'remove':
+        if (index === undefined || index < 0) {
+          socket.emit('error', 'Не указан элемент для удаления');
+          return;
+        }
+        
+        if (characteristic === 'profession' || characteristic === 'gender') {
+          socket.emit('error', 'Нельзя удалять части этой характеристики');
+          return;
+        }
+        
+        if (index === 0) {
+          if (parsed.items.length > 0) {
+            newValue = formatCharacteristicValue(characteristic, parsed.items[0], parsed.items.slice(1));
+          } else {
+            newValue = getRandomValue(characteristic);
+          }
+        } else {
+          const itemIndex = index - 1;
+          if (itemIndex >= 0 && itemIndex < parsed.items.length) {
+            const newItems = [...parsed.items];
+            newItems.splice(itemIndex, 1);
+            newValue = formatCharacteristicValue(characteristic, parsed.main, newItems);
+          } else {
+            socket.emit('error', 'Элемент не найден');
+            return;
+          }
+        }
+        break;
+      
+      default:
+        socket.emit('error', 'Неизвестное действие');
+        return;
+    }
+
+    targetPlayer.characteristics[characteristic].value = newValue;
+
+    games.set(gameId, game);
+    emitGameUpdateFixed(gameId);
+    saveData();
+    
+    console.log(`Создатель изменил характеристику ${characteristic} игрока ${targetPlayer.name} на ${newValue}`);
+  });
+  // =========================================================
 
   socket.on('disconnect', () => {
     console.log('Отключение:', socket.id);
