@@ -286,12 +286,12 @@ function extractHealthName(healthString) {
 // ====================================================
 
 // ============ НОВЫЕ ФУНКЦИИ ДЛЯ ХАРАКТЕРИСТИК ============
-function getRandomValue(charKey, currentValue = null, allPlayers = null, currentPlayerId = null) {
+function getRandomValue(charKey, currentValue = null) {
   const charData = GAME_DATA.characteristics[charKey];
   if (!charData) return '';
   
   let newValue;
-  const maxAttempts = 50; // Защита от бесконечного цикла
+  const maxAttempts = 50;
   let attempts = 0;
   
   if (charKey === 'profession') {
@@ -948,13 +948,24 @@ case 'random':
   newValue = getRandomValue(characteristic, currentValue, game.players, targetPlayer.id);
   break;
       
-      case 'select':
-        if (!value) {
-          socket.emit('error', 'Не выбрано значение');
-          return;
-        }
-        newValue = value;
-        break;
+case 'select':
+  if (!value) {
+    socket.emit('error', 'Не выбрано значение');
+    return;
+  }
+  if (characteristic === 'profession') {
+    // Ищем профессию по имени
+    const prof = GAME_DATA.characteristics.professions.find(p => p.name === value);
+    if (prof) {
+      const experience = Math.floor(Math.random() * 30) + 1;
+      newValue = `${prof.name} (стаж ${experience} лет) - ${prof.description}`;
+    } else {
+      newValue = value;
+    }
+  } else {
+    newValue = value;
+  }
+  break;
       
       case 'add':
         if (!value) {
