@@ -950,35 +950,39 @@ io.on('connection', (socket) => {
         newValue = formatCharacteristicValue(characteristic, parsed.main, [...parsed.items, value]);
         break;
       
-      case 'remove':
-        if (index === undefined || index < 0) {
-          socket.emit('error', 'Не указан элемент для удаления');
-          return;
-        }
-        
-        if (characteristic === 'profession' || characteristic === 'gender') {
-          socket.emit('error', 'Нельзя удалять части этой характеристики');
-          return;
-        }
-        
-        if (index === 0) {
-          if (parsed.items.length > 0) {
-            newValue = formatCharacteristicValue(characteristic, parsed.items[0], parsed.items.slice(1));
-          } else {
-            newValue = getRandomValue(characteristic);
-          }
-        } else {
-          const itemIndex = index - 1;
-          if (itemIndex >= 0 && itemIndex < parsed.items.length) {
-            const newItems = [...parsed.items];
-            newItems.splice(itemIndex, 1);
-            newValue = formatCharacteristicValue(characteristic, parsed.main, newItems);
-          } else {
-            socket.emit('error', 'Элемент не найден');
-            return;
-          }
-        }
-        break;
+case 'remove':
+  if (index === undefined || index < 0) {
+    socket.emit('error', 'Не указан элемент для удаления');
+    return;
+  }
+  
+  if (characteristic === 'profession' || characteristic === 'gender') {
+    socket.emit('error', 'Нельзя удалять части этой характеристики');
+    return;
+  }
+  
+  if (index === 0) {
+    // Удаляем основное значение
+    if (parsed.items.length > 0) {
+      // Если есть дополнительные, первое дополнительное становится основным
+      newValue = formatCharacteristicValue(characteristic, parsed.items[0], parsed.items.slice(1));
+    } else {
+      // Если нет дополнительных, ставим прочерк
+      newValue = '—';
+    }
+  } else {
+    // Удаляем дополнительное значение
+    const itemIndex = index - 1;
+    if (itemIndex >= 0 && itemIndex < parsed.items.length) {
+      const newItems = [...parsed.items];
+      newItems.splice(itemIndex, 1);
+      newValue = formatCharacteristicValue(characteristic, parsed.main, newItems);
+    } else {
+      socket.emit('error', 'Элемент не найден');
+      return;
+    }
+  }
+  break;
       
       default:
         socket.emit('error', 'Неизвестное действие');
