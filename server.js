@@ -286,23 +286,41 @@ function extractHealthName(healthString) {
 // ====================================================
 
 // ============ НОВЫЕ ФУНКЦИИ ДЛЯ ХАРАКТЕРИСТИК ============
-function getRandomValue(charKey) {
+function getRandomValue(charKey, currentValue = null, allPlayers = null, currentPlayerId = null) {
   const charData = GAME_DATA.characteristics[charKey];
   if (!charData) return '';
   
+  let newValue;
+  const maxAttempts = 50; // Защита от бесконечного цикла
+  let attempts = 0;
+  
   if (charKey === 'profession') {
-    const prof = charData[Math.floor(Math.random() * charData.length)];
-    const experience = Math.floor(Math.random() * 30) + 1;
-    return `${prof.name} (стаж ${experience} лет) - ${prof.description}`;
+    do {
+      const prof = charData[Math.floor(Math.random() * charData.length)];
+      const experience = Math.floor(Math.random() * 30) + 1;
+      newValue = `${prof.name} (стаж ${experience} лет) - ${prof.description}`;
+      attempts++;
+    } while (newValue === currentValue && attempts < maxAttempts);
+    return newValue;
   }
   
   if (charKey === 'gender') {
-    const gender = charData[Math.floor(Math.random() * charData.length)];
-    const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
-    return `${gender} (${age} лет)`;
+    do {
+      const gender = charData[Math.floor(Math.random() * charData.length)];
+      const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
+      newValue = `${gender} (${age} лет)`;
+      attempts++;
+    } while (newValue === currentValue && attempts < maxAttempts);
+    return newValue;
   }
   
-  return charData[Math.floor(Math.random() * charData.length)];
+  // Для обычных массивов
+  do {
+    newValue = charData[Math.floor(Math.random() * charData.length)];
+    attempts++;
+  } while (newValue === currentValue && attempts < maxAttempts);
+  
+  return newValue;
 }
 
 function parseCharacteristicValue(charKey, value) {
@@ -926,9 +944,9 @@ io.on('connection', (socket) => {
     let newValue;
 
     switch (action) {
-      case 'random':
-        newValue = getRandomValue(characteristic);
-        break;
+case 'random':
+  newValue = getRandomValue(characteristic, currentValue, game.players, targetPlayer.id);
+  break;
       
       case 'select':
         if (!value) {
