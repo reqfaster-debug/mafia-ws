@@ -156,21 +156,48 @@ function emitGameUpdateFixed(gameId) {
 global.emitGameUpdate = emitGameUpdateFixed;
 // ================= END FIX =================
 
-// ============ КОНФИГУРАЦИЯ OPENROUTER ============
-const OPENROUTER_API_KEY = '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';
+// ============ КОНФИГУРАЦИЯ GEMINI ============
+const GEMINI_API_KEY = 'AIzaSyBWjPcw0CgsseecF3ghrrjoFaeGiXutzkU';
+const GEMINI_MODEL = 'gemini-2.0-flash'; // Быстрая модель с хорошим качеством
+const GEMINI_TIMEOUT = 20000; // 20 секунд
 
-// Список моделей в порядке приоритета
-const MODELS = [
-    'google/gemini-2.0-flash-001',      // Gemini Flash (быстрый)
-    'google/gemini-1.5-flash',          // Gemini 1.5 Flash
-    'anthropic/claude-3-haiku',          // Claude Haiku (быстрый)
-    'meta-llama/llama-3-8b-instruct',    // Llama 3 (бесплатно)
-    'mistralai/mistral-7b-instruct'      // Mistral (бесплатно)
-];
+async function generateEventWithGemini(prompt) {
+  try {
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.9,
+          maxOutputTokens: 500,
+          topP: 0.95,
+          topK: 40
+        }
+      },
+      { 
+        timeout: GEMINI_TIMEOUT,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-// Таймаут для каждой модели (20 секунд)
-const MODEL_TIMEOUT = 20000;
-// ================================================
+    if (!response.data.candidates || response.data.candidates.length === 0) {
+      throw new Error('Нет ответа от Gemini');
+    }
+
+    return response.data.candidates[0].content.parts[0].text;
+    
+  } catch (error) {
+    console.error('Gemini error:', error.message);
+    throw error;
+  }
+}
+// =============================================
 
 // Массивы данных
 const GAME_DATA = {
@@ -250,12 +277,10 @@ function parseHealthValue(healthString) {
     return [];
   }
   
-  // Разделяем по запятой и обрабатываем каждую часть
   const parts = healthString.split(',').map(s => s.trim());
   const diseases = [];
   
   for (const part of parts) {
-    // Ищем формат "Болезнь (степень)"
     const match = part.match(/^(.+?)\s*\((\w+)\)$/);
     if (match) {
       diseases.push({
@@ -263,7 +288,6 @@ function parseHealthValue(healthString) {
         severity: match[2]
       });
     } else {
-      // Если нет скобок, добавляем с легкой степенью
       diseases.push({
         name: part,
         severity: 'легкая'
@@ -345,7 +369,6 @@ function extractHealthName(healthString) {
 function getRandomValue(charKey, currentValue = null) {
   console.log(`getRandomValue called for ${charKey}, current: ${currentValue}`);
   
-  // Маппинг ключей характеристик к правильным ключам в GAME_DATA
   const keyMapping = {
     'gender': 'genders',
     'bodyType': 'bodyTypes',
@@ -391,7 +414,6 @@ function getRandomValue(charKey, currentValue = null) {
     return newValue;
   }
   
-  // Для всех остальных характеристик
   do {
     newValue = charData[Math.floor(Math.random() * charData.length)];
     attempts++;
@@ -404,7 +426,6 @@ function getRandomValue(charKey, currentValue = null) {
 function parseCharacteristicValue(charKey, value) {
   console.log(`parseCharacteristicValue for ${charKey}: ${value}`);
   
-  // Характеристики, которые не могут иметь несколько значений
   const singleValueKeys = ['profession', 'gender', 'health'];
   
   if (singleValueKeys.includes(charKey)) {
@@ -511,7 +532,6 @@ function cancelVoting(gameId) {
 // ===========================================================
 
 // ============ ФУНКЦИИ ДЛЯ ГЕНЕРАЦИИ СОБЫТИЙ ============
-// Функция для получения всех раскрытых характеристик игроков
 function getRevealedCharacteristics(game) {
   const revealed = {};
   
@@ -530,7 +550,6 @@ function getRevealedCharacteristics(game) {
   return revealed;
 }
 
-// Функция для генерации промпта
 function generateEventPrompt(game) {
   const revealedChars = getRevealedCharacteristics(game);
   
@@ -563,80 +582,6 @@ function generateEventPrompt(game) {
   prompt += `\n\nСгенерируй событие в духе постапокалипсиса, мрачное и реалистичное.`;
 
   return prompt;
-}
-
-// Функция для вызова OpenRouter с таймаутом
-async function callOpenRouterWithTimeout(model, prompt, timeoutMs) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
-  try {
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.9,
-        max_tokens: 500
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://bunker-game-server.onrender.com',
-          'X-Title': 'Bunker Game'
-        },
-        signal: controller.signal
-      }
-    );
-    
-    clearTimeout(timeoutId);
-    return response.data.choices[0].message.content;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
-}
-
-// Основная функция генерации события с перебором моделей
-async function generateEventWithFallback(prompt) {
-  let lastError = null;
-  
-  for (let i = 0; i < MODELS.length; i++) {
-    const model = MODELS[i];
-    console.log(`Попытка ${i + 1}/${MODELS.length}: использование модели ${model}`);
-    
-    try {
-      const startTime = Date.now();
-      const result = await callOpenRouterWithTimeout(model, prompt, MODEL_TIMEOUT);
-      const elapsedTime = Date.now() - startTime;
-      
-      console.log(`✅ Модель ${model} ответила за ${elapsedTime}мс`);
-      return result;
-      
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log(`⏰ Модель ${model} не ответила за ${MODEL_TIMEOUT/1000} секунд`);
-        lastError = new Error(`Таймаут модели ${model}`);
-      } else {
-        console.log(`❌ Модель ${model} ошибка:`, error.message);
-        lastError = error;
-      }
-      
-      // Если это последняя модель, пробрасываем ошибку
-      if (i === MODELS.length - 1) {
-        throw lastError;
-      }
-      
-      // Небольшая пауза перед следующей попыткой
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }
 }
 // ===========================================================
 
@@ -729,7 +674,6 @@ app.get('/api/check-player/:playerId', (req, res) => {
 });
 
 // ============ API МАРШРУТЫ ДЛЯ СОБЫТИЙ ============
-// API маршрут для генерации события
 app.post('/api/generate-event', async (req, res) => {
   try {
     const { gameId } = req.body;
@@ -742,20 +686,16 @@ app.post('/api/generate-event', async (req, res) => {
     const prompt = generateEventPrompt(game);
     console.log('Prompt for AI:', prompt);
 
-    let generatedText;
-    let usedModel = 'unknown';
-    
     try {
-      // Пытаемся получить ответ от моделей по очереди
-      generatedText = await generateEventWithFallback(prompt);
+      // Пытаемся получить ответ от Gemini
+      const generatedText = await generateEventWithGemini(prompt);
       
-      // Определяем тип события по ключевым словам
       const isPositive = generatedText.toLowerCase().includes('удача') || 
                         generatedText.toLowerCase().includes('повезло') ||
                         generatedText.toLowerCase().includes('находка') ||
                         generatedText.toLowerCase().includes('спасает') ||
                         generatedText.toLowerCase().includes('чудом') ||
-                        Math.random() < 0.1; // 10% шанс если не определили
+                        Math.random() < 0.1;
       
       const event = {
         id: uuidv4(),
@@ -764,7 +704,6 @@ app.post('/api/generate-event', async (req, res) => {
         type: isPositive ? 'positive' : 'negative'
       };
 
-      // Сохраняем событие в игре
       if (!game.events) {
         game.events = [];
       }
@@ -774,14 +713,12 @@ app.post('/api/generate-event', async (req, res) => {
       }
 
       games.set(gameId, game);
-      
-      // Отправляем событие всем игрокам
       io.to(gameId).emit('newEvent', event);
       
-      res.json({ success: true, event, usedModel });
+      res.json({ success: true, event });
       
     } catch (error) {
-      console.error('Все модели не ответили:', error);
+      console.error('Gemini не ответил:', error);
       
       // Запасной вариант - локальное событие
       const localEvents = [
@@ -813,8 +750,7 @@ app.post('/api/generate-event', async (req, res) => {
       res.json({ 
         success: true, 
         event: fallbackEvent, 
-        usedModel: 'fallback',
-        warning: 'Использован локальный генератор событий (нейросеть недоступна)' 
+        warning: 'Использован локальный генератор событий (нейросеть временно недоступна)' 
       });
     }
     
