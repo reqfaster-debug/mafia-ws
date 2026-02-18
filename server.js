@@ -159,10 +159,15 @@ global.emitGameUpdate = emitGameUpdateFixed;
 // ============ КОНФИГУРАЦИЯ GEMINI ============
 const GEMINI_API_KEY = 'AIzaSyBWjPcw0CgsseecF3ghrrjoFaeGiXutzkU';
 const GEMINI_MODEL = 'gemini-2.0-flash'; // Быстрая модель с хорошим качеством
-const GEMINI_TIMEOUT = 20000; // 20 секунд
+const GEMINI_TIMEOUT = 10000; // 10 секунд
 
 async function generateEventWithGemini(prompt) {
+  console.log('🚀 Отправляем запрос к Gemini API...');
+  console.log('Промпт (первые 200 символов):', prompt.substring(0, 200) + '...');
+  
   try {
+    const startTime = Date.now();
+    
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -186,14 +191,30 @@ async function generateEventWithGemini(prompt) {
       }
     );
 
+    const elapsedTime = Date.now() - startTime;
+    console.log(`✅ Gemini ответил за ${elapsedTime}мс`);
+
     if (!response.data.candidates || response.data.candidates.length === 0) {
+      console.error('❌ Нет candidates в ответе:', response.data);
       throw new Error('Нет ответа от Gemini');
     }
 
-    return response.data.candidates[0].content.parts[0].text;
+    const generatedText = response.data.candidates[0].content.parts[0].text;
+    console.log('📝 Сгенерированный текст (первые 100 символов):', generatedText.substring(0, 100) + '...');
+    
+    return generatedText;
     
   } catch (error) {
-    console.error('Gemini error:', error.message);
+    console.error('❌ Ошибка Gemini:');
+    if (error.response) {
+      // API вернуло ошибку
+      console.error('Статус:', error.response.status);
+      console.error('Данные:', error.response.data);
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('Таймаут - сервер не ответил за 20 секунд');
+    } else {
+      console.error('Ошибка:', error.message);
+    }
     throw error;
   }
 }
