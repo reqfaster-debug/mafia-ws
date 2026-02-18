@@ -157,7 +157,16 @@ global.emitGameUpdate = emitGameUpdateFixed;
 // ================= END FIX =================
 
 // ============ КОНФИГУРАЦИЯ OPENROUTER ============
-const OPENROUTER_API_KEY = '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';
+// Ключ загружается из переменных окружения (добавлен в Render Dashboard)
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+if (!OPENROUTER_API_KEY) {
+  console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: OPENROUTER_API_KEY не задан в переменных окружения!');
+  console.error('Добавьте переменную OPENROUTER_API_KEY в Render Dashboard -> Environment');
+  process.exit(1); // Останавливаем сервер, если ключ не задан
+} else {
+  console.log('✅ OpenRouter API ключ загружен успешно');
+}
 
 // Список моделей в порядке приоритета
 const MODELS = [
