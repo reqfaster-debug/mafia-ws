@@ -5,6 +5,7 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;
 const path = require('path');
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
@@ -155,6 +156,22 @@ function emitGameUpdateFixed(gameId) {
 global.emitGameUpdate = emitGameUpdateFixed;
 // ================= END FIX =================
 
+// ============ КОНФИГУРАЦИЯ OPENROUTER ============
+const OPENROUTER_API_KEY = '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';
+
+// Список моделей в порядке приоритета
+const MODELS = [
+    'google/gemini-2.0-flash-001',      // Gemini Flash (быстрый)
+    'google/gemini-1.5-flash',          // Gemini 1.5 Flash
+    'anthropic/claude-3-haiku',          // Claude Haiku (быстрый)
+    'meta-llama/llama-3-8b-instruct',    // Llama 3 (бесплатно)
+    'mistralai/mistral-7b-instruct'      // Mistral (бесплатно)
+];
+
+// Таймаут для каждой модели (20 секунд)
+const MODEL_TIMEOUT = 20000;
+// ================================================
+
 // Массивы данных
 const GAME_DATA = {
   disasters: [
@@ -228,7 +245,6 @@ const GAME_DATA = {
 const HEALTH_SEVERITIES = ['легкая', 'средняя', 'тяжелая', 'критическая'];
 
 // ============ ФУНКЦИИ ДЛЯ ПАРСИНГА ЗДОРОВЬЯ ============
-// ============ ФУНКЦИИ ДЛЯ ПАРСИНГА ЗДОРОВЬЯ ============
 function parseHealthValue(healthString) {
   if (!healthString || healthString === 'Здоров') {
     return [];
@@ -240,7 +256,6 @@ function parseHealthValue(healthString) {
   
   for (const part of parts) {
     // Ищем формат "Болезнь (степень)"
-    // Регулярное выражение ищет название болезни и степень в скобках
     const match = part.match(/^(.+?)\s*\((\w+)\)$/);
     if (match) {
       diseases.push({
@@ -248,29 +263,16 @@ function parseHealthValue(healthString) {
         severity: match[2]
       });
     } else {
-      // Если нет скобок, это может быть результат неправильного парсинга
-      // Пробуем извлечь болезнь из строки
-      const simpleMatch = part.match(/^([^\(]+)/);
-      if (simpleMatch) {
-        diseases.push({
-          name: simpleMatch[1].trim(),
-          severity: 'легкая'
-        });
-      }
+      // Если нет скобок, добавляем с легкой степенью
+      diseases.push({
+        name: part,
+        severity: 'легкая'
+      });
     }
   }
   
   return diseases;
 }
-
-function formatHealthValue(diseases) {
-  if (!diseases || diseases.length === 0) {
-    return 'Здоров';
-  }
-  
-  return diseases.map(d => `${d.name} (${d.severity})`).join(', ');
-}
-// ========================================================
 
 function formatHealthValue(diseases) {
   if (!diseases || diseases.length === 0) {
@@ -288,14 +290,13 @@ function generatePlayer(name, socketId) {
   const profession = GAME_DATA.characteristics.professions[Math.floor(Math.random() * GAME_DATA.characteristics.professions.length)];
   const experience = Math.floor(Math.random() * 30) + 1;
   
-
-const healthBase = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
-let healthValue = healthBase.name;
-
-if (healthBase.name !== 'Здоров') {
-  const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
-  healthValue = `${healthBase.name} (${severity})`; // Только одна пара скобок
-}
+  const healthBase = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
+  let healthValue = healthBase.name;
+  
+  if (healthBase.name !== 'Здоров') {
+    const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+    healthValue = `${healthBase.name} (${severity})`;
+  }
 
   const player = {
     id: uuidv4(),
@@ -509,6 +510,136 @@ function cancelVoting(gameId) {
 }
 // ===========================================================
 
+// ============ ФУНКЦИИ ДЛЯ ГЕНЕРАЦИИ СОБЫТИЙ ============
+// Функция для получения всех раскрытых характеристик игроков
+function getRevealedCharacteristics(game) {
+  const revealed = {};
+  
+  game.players.forEach(player => {
+    const playerRevealed = {};
+    Object.entries(player.characteristics).forEach(([key, char]) => {
+      if (char.revealed) {
+        playerRevealed[key] = char.value;
+      }
+    });
+    if (Object.keys(playerRevealed).length > 0) {
+      revealed[player.name] = playerRevealed;
+    }
+  });
+  
+  return revealed;
+}
+
+// Функция для генерации промпта
+function generateEventPrompt(game) {
+  const revealedChars = getRevealedCharacteristics(game);
+  
+  let prompt = `Ты — мастер игры "Бункер". Сгенерируй ОДНО случайное драматическое событие, которое происходит с выжившими в постапокалиптическом бункере.
+
+Критические правила:
+1. Событие должно быть связано с текущей катастрофой и состоянием бункера
+2. Используй ТОЛЬКО те характеристики игроков, которые уже раскрыты
+3. Событие может быть негативным (90% вероятности) или редким позитивным (10% вероятности)
+4. Опиши событие в 3-4 предложениях, укажи последствия для конкретных игроков
+5. Не используй шаблонные фразы, будь креативен
+
+Контекст:
+- Катастрофа: ${game.disaster}
+- Бункер: срок ${game.bunker.duration_years} лет, еда на ${game.bunker.food_years} лет, особенности: ${game.bunker.extra}
+- Мест в бункере: ${game.totalSlots || Math.floor(game.players.length / 2)}
+`;
+
+  if (Object.keys(revealedChars).length > 0) {
+    prompt += `\nРаскрытые характеристики игроков:\n`;
+    Object.entries(revealedChars).forEach(([playerName, chars]) => {
+      prompt += `- ${playerName}: `;
+      const charStrings = Object.entries(chars).map(([key, value]) => `${key}: ${value}`);
+      prompt += charStrings.join(', ') + '\n';
+    });
+  } else {
+    prompt += `\nПока нет раскрытых характеристик.`;
+  }
+
+  prompt += `\n\nСгенерируй событие в духе постапокалипсиса, мрачное и реалистичное.`;
+
+  return prompt;
+}
+
+// Функция для вызова OpenRouter с таймаутом
+async function callOpenRouterWithTimeout(model, prompt, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.9,
+        max_tokens: 500
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://bunker-game-server.onrender.com',
+          'X-Title': 'Bunker Game'
+        },
+        signal: controller.signal
+      }
+    );
+    
+    clearTimeout(timeoutId);
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+// Основная функция генерации события с перебором моделей
+async function generateEventWithFallback(prompt) {
+  let lastError = null;
+  
+  for (let i = 0; i < MODELS.length; i++) {
+    const model = MODELS[i];
+    console.log(`Попытка ${i + 1}/${MODELS.length}: использование модели ${model}`);
+    
+    try {
+      const startTime = Date.now();
+      const result = await callOpenRouterWithTimeout(model, prompt, MODEL_TIMEOUT);
+      const elapsedTime = Date.now() - startTime;
+      
+      console.log(`✅ Модель ${model} ответила за ${elapsedTime}мс`);
+      return result;
+      
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log(`⏰ Модель ${model} не ответила за ${MODEL_TIMEOUT/1000} секунд`);
+        lastError = new Error(`Таймаут модели ${model}`);
+      } else {
+        console.log(`❌ Модель ${model} ошибка:`, error.message);
+        lastError = error;
+      }
+      
+      // Если это последняя модель, пробрасываем ошибку
+      if (i === MODELS.length - 1) {
+        throw lastError;
+      }
+      
+      // Небольшая пауза перед следующей попыткой
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+}
+// ===========================================================
+
 // API маршруты
 app.post('/api/create-lobby', (req, res) => {
   try {
@@ -596,6 +727,118 @@ app.get('/api/check-player/:playerId', (req, res) => {
     res.status(500).json({ error: 'Ошибка проверки игрока' });
   }
 });
+
+// ============ API МАРШРУТЫ ДЛЯ СОБЫТИЙ ============
+// API маршрут для генерации события
+app.post('/api/generate-event', async (req, res) => {
+  try {
+    const { gameId } = req.body;
+    
+    const game = games.get(gameId);
+    if (!game) {
+      return res.status(404).json({ error: 'Игра не найдена' });
+    }
+
+    const prompt = generateEventPrompt(game);
+    console.log('Prompt for AI:', prompt);
+
+    let generatedText;
+    let usedModel = 'unknown';
+    
+    try {
+      // Пытаемся получить ответ от моделей по очереди
+      generatedText = await generateEventWithFallback(prompt);
+      
+      // Определяем тип события по ключевым словам
+      const isPositive = generatedText.toLowerCase().includes('удача') || 
+                        generatedText.toLowerCase().includes('повезло') ||
+                        generatedText.toLowerCase().includes('находка') ||
+                        generatedText.toLowerCase().includes('спасает') ||
+                        generatedText.toLowerCase().includes('чудом') ||
+                        Math.random() < 0.1; // 10% шанс если не определили
+      
+      const event = {
+        id: uuidv4(),
+        text: generatedText,
+        timestamp: Date.now(),
+        type: isPositive ? 'positive' : 'negative'
+      };
+
+      // Сохраняем событие в игре
+      if (!game.events) {
+        game.events = [];
+      }
+      game.events.unshift(event);
+      if (game.events.length > 20) {
+        game.events = game.events.slice(0, 20);
+      }
+
+      games.set(gameId, game);
+      
+      // Отправляем событие всем игрокам
+      io.to(gameId).emit('newEvent', event);
+      
+      res.json({ success: true, event, usedModel });
+      
+    } catch (error) {
+      console.error('Все модели не ответили:', error);
+      
+      // Запасной вариант - локальное событие
+      const localEvents = [
+        "В системе вентиляции происходит короткое замыкание. Дым заполняет коридоры, и пока все тушат пожар, Александр теряет сознание от угарного газа. Ему потребуется помощь, чтобы прийти в себя.",
+        "Мария находит старый дневник предыдущего обитателя бункера. В нём подробно описаны выживательные лайфхаки и карта ближайших руин. Это может пригодиться в будущем.",
+        "Ночью кто-то вскрывает склад с едой. Часть запасов пропадает, но на месте преступления находят улику, указывающую на одного из выживших.",
+        "С крыши бункера падает тяжёлый кусок льда и ранит Дмитрия. Теперь он не может выполнять точную работу, его эффективность как инженера резко снижена.",
+        "Анна находит работающий радиоприёмник и ловит сигнал с другого бункера. Там говорят, что у них есть лекарства, но они далеко. Нужно решать, стоит ли рисковать."
+      ];
+      
+      const fallbackEvent = {
+        id: uuidv4(),
+        text: localEvents[Math.floor(Math.random() * localEvents.length)],
+        timestamp: Date.now(),
+        type: 'negative'
+      };
+      
+      if (!game.events) {
+        game.events = [];
+      }
+      game.events.unshift(fallbackEvent);
+      if (game.events.length > 20) {
+        game.events = game.events.slice(0, 20);
+      }
+      
+      games.set(gameId, game);
+      io.to(gameId).emit('newEvent', fallbackEvent);
+      
+      res.json({ 
+        success: true, 
+        event: fallbackEvent, 
+        usedModel: 'fallback',
+        warning: 'Использован локальный генератор событий (нейросеть недоступна)' 
+      });
+    }
+    
+  } catch (error) {
+    console.error('Ошибка генерации события:', error);
+    res.status(500).json({ 
+      error: 'Ошибка генерации события',
+      details: error.message 
+    });
+  }
+});
+
+// Маршрут для получения истории событий
+app.get('/api/events/:gameId', (req, res) => {
+  const { gameId } = req.params;
+  const game = games.get(gameId);
+  
+  if (!game) {
+    return res.status(404).json({ error: 'Игра не найдена' });
+  }
+  
+  res.json({ events: game.events || [] });
+});
+// ====================================================
 
 // Socket.IO
 io.on('connection', (socket) => {
