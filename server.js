@@ -168,14 +168,14 @@ if (!OPENROUTER_API_KEY) {
   console.log('✅ OpenRouter API ключ загружен успешно');
 }
 
-// Список моделей в порядке приоритета
+
 const MODELS = [
-    'google/gemini-2.0-flash-001',      // Gemini Flash (быстрый)
-    'google/gemini-1.5-flash',          // Gemini 1.5 Flash
-    'anthropic/claude-3-haiku',          // Claude Haiku (быстрый)
-    'meta-llama/llama-3-8b-instruct',    // Llama 3 (бесплатно)
-    'mistralai/mistral-7b-instruct'      // Mistral (бесплатно)
+    'nex-agi/deepseek-v3.1-nex-n1:free',  // DeepSeek V3.1 (бесплатно)
+    'deepseek/deepseek-prover-v2:free',   // DeepSeek Prover (бесплатно)
+    'google/gemini-2.0-flash-001',        // Gemini (запасной)
+    'mistralai/mistral-7b-instruct'       // Mistral (запасной)
 ];
+
 
 // Таймаут для каждой модели (20 секунд)
 const MODEL_TIMEOUT = 20000;
