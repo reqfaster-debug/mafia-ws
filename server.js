@@ -10,19 +10,31 @@ const axios = require('axios');
 const app = express();
 const server = http.createServer(app);
 
-// Настройка CORS
+// Настройка CORS для Express
+const corsOptions = {
+  origin: ["http://a1230559.xsph.ru", "http://localhost"],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+};
+
+app.use(cors(corsOptions));
+
+// Обработка preflight запросов
+app.options('*', cors(corsOptions));
+
+// Настройка CORS для Socket.IO
 const io = socketIo(server, {
   cors: {
     origin: ["http://a1230559.xsph.ru", "http://localhost"],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    transports: ['websocket', 'polling']
   }
 });
 
-app.use(cors({
-  origin: ["http://a1230559.xsph.ru", "http://localhost"],
-  credentials: true
-}));
 
 app.use(express.json());
 
