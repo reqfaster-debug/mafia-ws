@@ -10,9 +10,31 @@ const axios = require('axios');
 const app = express();
 const server = http.createServer(app);
 
-// Настройка CORS для Express
+
 const corsOptions = {
-  origin: ["http://a1230559.xsph.ru", "http://localhost"],
+  origin: function (origin, callback) {
+    // Разрешаем запросы без origin (например, мобильные приложения)
+    if (!origin) return callback(null, true);
+    
+    // Список разрешенных доменов
+    const allowedOrigins = [
+      'http://localhost',
+      'http://localhost:3000',
+      'http://127.0.0.1',
+      'http://127.0.0.1:3000',
+      'http://a1230559.xsph.ru',
+      'https://a1230559.xsph.ru',
+      'http://calm-dolphin-0396cf.netlify.app',
+      'https://calm-dolphin-0396cf.netlify.app'
+    ];
+    
+    // Проверяем, есть ли origin в списке разрешенных
+    if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -20,18 +42,20 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Обработка preflight запросов
 app.options('*', cors(corsOptions));
 
-// Настройка CORS для Socket.IO
+// Socket.IO CORS
 const io = socketIo(server, {
   cors: {
-    origin: ["http://a1230559.xsph.ru", "http://localhost"],
+    origin: [
+      "http://a1230559.xsph.ru",
+      "https://a1230559.xsph.ru", 
+      "http://calm-dolphin-0396cf.netlify.app",
+      "https://calm-dolphin-0396cf.netlify.app",
+      "http://localhost"
+    ],
     methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    transports: ['websocket', 'polling']
+    credentials: true
   }
 });
 
