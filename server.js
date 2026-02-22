@@ -2937,6 +2937,93 @@ function applyEventConsequences(eventText, game) {
     }
   }
 }
+// API маршруты
+app.post('/api/create-lobby', (req, res) => {
+  try {
+    const lobbyId = uuidv4().substring(0, 6).toUpperCase();
+    lobbies.set(lobbyId, {
+      id: lobbyId,
+      players: [],
+      creator: null,
+      created: Date.now()
+    });
+
+    saveData();
+    console.log('Лобби создано:', lobbyId);
+    res.json({ lobbyId });
+  } catch (error) {
+    console.error('Ошибка создания лобби:', error);
+    res.status(500).json({ error: 'Ошибка создания лобби' });
+  }
+});
+
+app.get('/api/check-lobby/:lobbyId', (req, res) => {
+  try {
+    const { lobbyId } = req.params;
+    const lobby = lobbies.get(lobbyId);
+    res.json({ exists: !!lobby });
+  } catch (error) {
+    console.error('Ошибка проверки лобби:', error);
+    res.status(500).json({ error: 'Ошибка проверки лобби' });
+  }
+});
+
+app.get('/api/check-player/:playerId', (req, res) => {
+  try {
+    const { playerId } = req.params;
+
+    const gameId = playerGameMap.get(playerId);
+    if (gameId) {
+      const game = games.get(gameId);
+      if (game) {
+        const player = game.players.find(p => p.id === playerId);
+        if (player) {
+          return res.json({
+            active: true,
+            type: 'game',
+            gameId: gameId,
+            lobbyId: game.lobbyId,
+            player: player,
+            gameData: {
+              disaster: game.disaster,
+              bunker: game.bunker,
+              players: game.players
+            }
+          });
+        }
+      }
+    }
+
+    for (const [lId, lobby] of lobbies) {
+      const player = lobby.players.find(p => p.id === playerId);
+      if (player) {
+        return res.json({
+          active: true,
+          type: lobby.gameId ? 'game_started' : 'lobby',
+          gameId: lobby.gameId,
+          lobbyId: lId,
+          player: player,
+          players: lobby.players
+        });
+      }
+    }
+
+    const savedPlayer = playersDataMap.get(playerId);
+    if (savedPlayer) {
+      return res.json({
+        active: false,
+        saved: true,
+        player: savedPlayer
+      });
+    }
+
+    res.json({ active: false });
+
+  } catch (error) {
+    console.error('Ошибка проверки игрока:', error);
+    res.status(500).json({ error: 'Ошибка проверки игрока' });
+  }
+});
 
 // ============ API МАРШРУТЫ ДЛЯ СОБЫТИЙ ============
 app.post('/api/generate-event', async (req, res) => {
@@ -3004,6 +3091,10 @@ app.get('/api/events/:gameId', (req, res) => {
 });
 
 // ============ КОНЕЦ БЛОКА ГЕНЕРАЦИИ СОБЫТИЙ ============
+
+
+
+
 
 // Socket.IO
 io.on('connection', (socket) => {
