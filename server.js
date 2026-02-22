@@ -2468,6 +2468,20 @@ ${extraUniqInstructions}
 `;
 }
 
+
+// Функция для валидации и очистки события
+function validateAndCleanEvent(rawText, game) {
+  let cleaned = rawText;
+  
+  // Удаляем возможные маркеры "Тип события:" если они есть
+  cleaned = cleaned.replace(/Тип события:.*?(?=\n\n|$)/gis, '').trim();
+  
+  // Здесь можно добавить дополнительную валидацию при необходимости
+  // Например, проверку на недопустимые предметы и т.д.
+  
+  return cleaned;
+}
+
 // 6) Основная функция: пытаемся сгенерировать уникальное событие до K попыток
 async function generateUniqueEvent(game, options = {}) {
   const {
