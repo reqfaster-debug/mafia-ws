@@ -2540,7 +2540,6 @@ function validateAndCleanEvent(rawText, game) {
   const parts = cleaned.split(/\n\s*Последствия:/i);
   
   if (parts.length < 2) {
-    // Если нет секции "Последствия:", возвращаем как есть
     return cleaned;
   }
   
@@ -2557,33 +2556,82 @@ function validateAndCleanEvent(rawText, game) {
     // Проверяем формат: "- Имя: что изменилось"
     const match = trimmedLine.match(/^-\s*([^:]+):\s*(.+)$/);
     if (!match) {
-      // Если формат неверный, но это похоже на последствие, оставляем как есть
-      if (trimmedLine.startsWith('-')) {
-        validatedConsequences.push(line);
-      }
       continue;
     }
     
     const [, playerName, change] = match;
-    
-    // Находим игрока по имени
     const player = game.players.find(p => p.name === playerName);
-    if (!player) {
-      // Если игрок не найден, но это может быть "Бункер:" - оставляем
-      if (playerName.toLowerCase() === 'бункер') {
-        validatedConsequences.push(line);
-      }
+    
+    // Если это не игрок, а "Бункер" - всегда пропускаем
+    if (!player && playerName.toLowerCase() === 'бункер') {
+      validatedConsequences.push(line);
       continue;
     }
     
-    // Проверяем на добавление в инвентарь
-    if (change.toLowerCase().includes('получает') || 
-        change.toLowerCase().includes('находит') ||
-        change.toLowerCase().includes('добавляется')) {
+    // Если игрок не найден - пропускаем
+    if (!player) {
+      console.log(`⚠️ Игрок ${playerName} не найден, пропускаем последствие`);
+      continue;
+    }
+    
+    // Проверяем на потерю предмета
+    if (change.toLowerCase().includes('теряет') ||
+        change.toLowerCase().includes('потерял') ||
+        change.toLowerCase().includes('потеряла') ||
+        change.toLowerCase().includes('пропадает') ||
+        change.toLowerCase().includes('ломается') ||
+        change.toLowerCase().includes('сломал') ||
+        change.toLowerCase().includes('сломала')) {
       
-      // Проверяем, раскрыт ли инвентарь у игрока
+      // Проверяем, раскрыт ли инвентарь
       if (!player.characteristics.inventory.revealed) {
-        console.log(`⚠️ Попытка изменить инвентарь игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
+        console.log(`⚠️ Попытка удалить предмет у игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
+        continue;
+      }
+      
+      // Ищем какой предмет теряется
+      let lostItem = null;
+      for (const item of GAME_DATA.characteristics.inventory) {
+        if (change.includes(item)) {
+          lostItem = item;
+          break;
+        }
+      }
+      
+      if (!lostItem) {
+        // Если предмет не найден в списке, пытаемся извлечь из текста
+        const itemMatch = change.match(/теряет\s+(.+?)(?:\s|$)/i) || 
+                         change.match(/потерял\s+(.+?)(?:\s|$)/i) ||
+                         change.match(/ломается\s+(.+?)(?:\s|$)/i);
+        if (itemMatch) {
+          lostItem = itemMatch[1].trim();
+        }
+      }
+      
+      if (lostItem) {
+        // Проверяем, есть ли у игрока этот предмет
+        const playerItems = parseCharacteristicValue('inventory', player.characteristics.inventory.value);
+        const allItems = [playerItems.main, ...playerItems.items].filter(i => i && i !== '—');
+        
+        if (!allItems.includes(lostItem) && !allItems.some(i => i.includes(lostItem))) {
+          console.log(`⚠️ У игрока ${playerName} нет предмета "${lostItem}", пропускаем потерю`);
+          continue;
+        }
+      }
+      
+      validatedConsequences.push(line);
+    }
+    
+    // Проверяем на добавление предмета
+    else if (change.toLowerCase().includes('получает') || 
+             change.toLowerCase().includes('находит') ||
+             change.toLowerCase().includes('нашёл') ||
+             change.toLowerCase().includes('нашла') ||
+             change.toLowerCase().includes('добавляется')) {
+      
+      // Проверяем, раскрыт ли инвентарь
+      if (!player.characteristics.inventory.revealed) {
+        console.log(`⚠️ Попытка добавить предмет игроку ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
         continue;
       }
       
@@ -2604,29 +2652,18 @@ function validateAndCleanEvent(rawText, game) {
       validatedConsequences.push(line);
     }
     
-    // Проверяем на удаление из инвентаря
-    else if (change.toLowerCase().includes('теряет') ||
-             change.toLowerCase().includes('пропадает') ||
-             change.toLowerCase().includes('ломается')) {
-      
-      // Проверяем, раскрыт ли инвентарь у игрока
-      if (!player.characteristics.inventory.revealed) {
-        console.log(`⚠️ Попытка удалить предмет у игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
-        continue;
-      }
-      
-      validatedConsequences.push(line);
-    }
-    
     // Проверяем на изменение здоровья
-    else if (change.toLowerCase().includes('заболевает') ||
-             change.toLowerCase().includes('получает травму') ||
-             change.toLowerCase().includes('заражается') ||
-             change.toLowerCase().includes('царапины') ||
+    else if (change.toLowerCase().includes('травма') ||
+             change.toLowerCase().includes('рана') ||
+             change.toLowerCase().includes('перелом') ||
+             change.toLowerCase().includes('вывих') ||
              change.toLowerCase().includes('ушиб') ||
-             change.toLowerCase().includes('рана')) {
+             change.toLowerCase().includes('ожог') ||
+             change.toLowerCase().includes('обморожение') ||
+             change.toLowerCase().includes('болезнь') ||
+             change.toLowerCase().includes('заболевание')) {
       
-      // Проверяем, раскрыто ли здоровье у игрока
+      // Проверяем, раскрыто ли здоровье
       if (!player.characteristics.health.revealed) {
         console.log(`⚠️ Попытка изменить здоровье игрока ${playerName}, но здоровье не раскрыто! Пропускаем.`);
         continue;
@@ -2636,14 +2673,13 @@ function validateAndCleanEvent(rawText, game) {
     }
     
     // Изменения бункера всегда разрешены
-    else if (playerName.toLowerCase() === 'бункер' ||
-             change.toLowerCase().includes('бункер')) {
+    else if (playerName.toLowerCase() === 'бункер') {
       validatedConsequences.push(line);
     }
     
-    // Другие типы последствий оставляем как есть
+    // Другие типы последствий пропускаем
     else {
-      validatedConsequences.push(line);
+      console.log(`⚠️ Неизвестный тип последствия для игрока ${playerName}: ${change}`);
     }
   }
   
@@ -2651,8 +2687,9 @@ function validateAndCleanEvent(rawText, game) {
   if (validatedConsequences.length > 0) {
     cleaned = mainPart + '\n\nПоследствия:\n' + validatedConsequences.join('\n');
   } else {
-    // Если все последствия отфильтрованы, оставляем только основную часть
+    // Если все последствия отфильтрованы, событие остается без последствий
     cleaned = mainPart;
+    console.log(`⚠️ Все последствия были отфильтрованы для события: ${mainPart.substring(0, 100)}...`);
   }
   
   return cleaned;
@@ -2672,17 +2709,26 @@ function applyEventConsequences(eventText, game) {
     if (!match) continue;
     
     const [, playerName, change] = match;
-    const player = game.players.find(p => p.name === playerName);
     
+    // Обработка изменений бункера
+    if (playerName.toLowerCase() === 'бункер') {
+      // Здесь логика для бункера
+      console.log(`Изменение бункера: ${change}`);
+      continue;
+    }
+    
+    const player = game.players.find(p => p.name === playerName);
     if (!player) continue;
     
     // Применяем изменения только если характеристика раскрыта
     if (change.toLowerCase().includes('получает') || 
         change.toLowerCase().includes('находит') ||
+        change.toLowerCase().includes('нашёл') ||
+        change.toLowerCase().includes('нашла') ||
         change.toLowerCase().includes('добавляется')) {
       
       if (!player.characteristics.inventory.revealed) {
-        console.log(`⚠️ Пропускаем изменение инвентаря для ${playerName} - инвентарь не раскрыт`);
+        console.log(`⚠️ Пропускаем добавление предмета для ${playerName} - инвентарь не раскрыт`);
         continue;
       }
       
@@ -2691,7 +2737,7 @@ function applyEventConsequences(eventText, game) {
         if (change.includes(item)) {
           // Добавляем предмет к инвентарю
           const currentInv = player.characteristics.inventory.value;
-          if (currentInv === '—' || !currentInv) {
+          if (currentInv === '—' || !currentInv || currentInv === '') {
             player.characteristics.inventory.value = item;
           } else {
             player.characteristics.inventory.value = `${currentInv}, ${item}`;
@@ -2703,8 +2749,12 @@ function applyEventConsequences(eventText, game) {
     }
     
     else if (change.toLowerCase().includes('теряет') ||
+             change.toLowerCase().includes('потерял') ||
+             change.toLowerCase().includes('потеряла') ||
              change.toLowerCase().includes('пропадает') ||
-             change.toLowerCase().includes('ломается')) {
+             change.toLowerCase().includes('ломается') ||
+             change.toLowerCase().includes('сломал') ||
+             change.toLowerCase().includes('сломала')) {
       
       if (!player.characteristics.inventory.revealed) {
         console.log(`⚠️ Пропускаем удаление предмета для ${playerName} - инвентарь не раскрыт`);
@@ -2712,49 +2762,92 @@ function applyEventConsequences(eventText, game) {
       }
       
       // Ищем предмет для удаления
+      let itemToRemove = null;
       for (const item of GAME_DATA.characteristics.inventory) {
         if (change.includes(item)) {
-          // Удаляем предмет из инвентаря
-          const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
-          const newItems = items.filter(i => i !== item);
+          itemToRemove = item;
+          break;
+        }
+      }
+      
+      if (!itemToRemove) {
+        // Пытаемся извлечь из текста
+        const itemMatch = change.match(/теряет\s+(.+?)(?:\s|$)/i) || 
+                         change.match(/потерял\s+(.+?)(?:\s|$)/i) ||
+                         change.match(/ломается\s+(.+?)(?:\s|$)/i);
+        if (itemMatch) {
+          itemToRemove = itemMatch[1].trim();
+        }
+      }
+      
+      if (itemToRemove) {
+        // Проверяем, есть ли у игрока этот предмет
+        const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
+        
+        if (items.includes(itemToRemove)) {
+          // Удаляем предмет
+          const newItems = items.filter(i => i !== itemToRemove);
           
           if (newItems.length === 0) {
             player.characteristics.inventory.value = '—';
           } else {
             player.characteristics.inventory.value = newItems.join(', ');
           }
-          console.log(`✅ Удален предмет "${item}" у игрока ${playerName}`);
-          break;
+          console.log(`✅ Удален предмет "${itemToRemove}" у игрока ${playerName}`);
+        } else {
+          console.log(`⚠️ У игрока ${playerName} нет предмета "${itemToRemove}" для удаления`);
         }
       }
     }
     
-    else if (change.toLowerCase().includes('заболевает') ||
-             change.toLowerCase().includes('получает травму') ||
-             change.toLowerCase().includes('заражается')) {
+    else if (change.toLowerCase().includes('травма') ||
+             change.toLowerCase().includes('рана') ||
+             change.toLowerCase().includes('перелом') ||
+             change.toLowerCase().includes('вывих') ||
+             change.toLowerCase().includes('ушиб') ||
+             change.toLowerCase().includes('ожог') ||
+             change.toLowerCase().includes('обморожение') ||
+             change.toLowerCase().includes('болезнь')) {
       
       if (!player.characteristics.health.revealed) {
         console.log(`⚠️ Пропускаем изменение здоровья для ${playerName} - здоровье не раскрыто`);
         continue;
       }
       
-      // Здесь логика добавления болезней
-      for (const disease of GAME_DATA.characteristics.health) {
-        if (change.includes(disease.name)) {
-          const diseases = parseHealthValue(player.characteristics.health.value);
-          
-          // Определяем степень тяжести из текста или ставим легкую
-          let severity = 'легкая';
-          if (change.includes('тяжелую')) severity = 'тяжелая';
-          else if (change.includes('среднюю')) severity = 'средняя';
-          else if (change.includes('критическую')) severity = 'критическая';
-          
-          diseases.push({ name: disease.name, severity });
-          player.characteristics.health.value = formatHealthValue(diseases);
-          console.log(`✅ Добавлена болезнь "${disease.name}" игроку ${playerName}`);
+      // Добавляем болезнь/травму
+      const diseases = parseHealthValue(player.characteristics.health.value);
+      
+      // Определяем степень тяжести
+      let severity = 'легкая';
+      if (change.includes('тяжел')) severity = 'тяжелая';
+      else if (change.includes('средн')) severity = 'средняя';
+      
+      // Определяем название болезни/травмы
+      let diseaseName = 'Травма';
+      const diseaseKeywords = {
+        'перелом': 'Перелом',
+        'вывих': 'Вывих',
+        'растяжение': 'Растяжение',
+        'рана': 'Рваная рана',
+        'ушиб': 'Ушиб',
+        'ожог': 'Ожог',
+        'обморожение': 'Обморожение',
+        'сотрясение': 'Сотрясение мозга',
+        'пневмония': 'Пневмония',
+        'ангина': 'Ангина',
+        'отравление': 'Отравление'
+      };
+      
+      for (const [key, value] of Object.entries(diseaseKeywords)) {
+        if (change.toLowerCase().includes(key)) {
+          diseaseName = value;
           break;
         }
       }
+      
+      diseases.push({ name: diseaseName, severity });
+      player.characteristics.health.value = formatHealthValue(diseases);
+      console.log(`✅ Добавлена травма/болезнь "${diseaseName}" игроку ${playerName}`);
     }
   }
 }
