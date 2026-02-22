@@ -2696,6 +2696,7 @@ function validateAndCleanEvent(rawText, game) {
 }
 
 // Функция для применения последствий события к игре
+// Функция для применения последствий события к игре
 function applyEventConsequences(eventText, game) {
   const consequencesMatch = eventText.match(/Последствия:([\s\S]*?)(?=$|(?=\n\n))/i);
   
@@ -2712,11 +2713,105 @@ function applyEventConsequences(eventText, game) {
     
     // Обработка изменений бункера
     if (playerName.toLowerCase() === 'бункер') {
-      // Здесь логика для бункера
-      console.log(`Изменение бункера: ${change}`);
+      // Проверяем, есть ли у бункера ресурсы для списания
+      if (change.toLowerCase().includes('минус') || 
+          change.toLowerCase().includes('-') ||
+          change.toLowerCase().includes('потрачено') ||
+          change.toLowerCase().includes('использовано')) {
+        
+        // Ищем, какой ресурс пытаются списать
+        let resourceName = null;
+        let resourceAmount = 1;
+        
+        // Парсим количество (например, "-3 рулона марли")
+        const amountMatch = change.match(/(-|\b|минус)\s*(\d+)/i);
+        if (amountMatch) {
+          resourceAmount = parseInt(amountMatch[2]);
+        }
+        
+        // Ищем название ресурса
+        for (const item of GAME_DATA.characteristics.inventory) {
+          if (change.includes(item)) {
+            resourceName = item;
+            break;
+          }
+        }
+        
+        if (!resourceName) {
+          // Пытаемся извлечь из текста
+          const resourceMatch = change.match(/(?:рулон|банка|пачка|ящик|бутылка|штук|шт)\s*(.+?)(?:\s|$)/i);
+          if (resourceMatch) {
+            resourceName = resourceMatch[1].trim();
+          } else {
+            // Если не можем определить ресурс, пропускаем
+            console.log(`⚠️ Не удалось определить ресурс для списания: ${change}`);
+            continue;
+          }
+        }
+        
+        // Проверяем, есть ли у кого-нибудь в инвентаре этот ресурс
+        let totalAvailable = 0;
+        const playersWithResource = [];
+        
+        game.players.forEach(player => {
+          if (player.characteristics.inventory.revealed) {
+            const items = parseCharacteristicValue('inventory', player.characteristics.inventory.value);
+            const allItems = [items.main, ...items.items].filter(i => i && i !== '—');
+            
+            allItems.forEach(item => {
+              if (item.includes(resourceName) || resourceName.includes(item)) {
+                totalAvailable++;
+                playersWithResource.push({ player, item });
+              }
+            });
+          }
+        });
+        
+        console.log(`Для ресурса "${resourceName}" требуется ${resourceAmount}, доступно: ${totalAvailable}`);
+        
+        if (totalAvailable >= resourceAmount) {
+          // Есть достаточно ресурсов, списываем
+          let remainingToRemove = resourceAmount;
+          
+          for (const { player, item } of playersWithResource) {
+            if (remainingToRemove <= 0) break;
+            
+            const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
+            const itemIndex = items.indexOf(item);
+            
+            if (itemIndex !== -1) {
+              items.splice(itemIndex, 1);
+              remainingToRemove--;
+              
+              if (items.length === 0) {
+                player.characteristics.inventory.value = '—';
+              } else {
+                player.characteristics.inventory.value = items.join(', ');
+              }
+              
+              console.log(`✅ Списано "${item}" у игрока ${player.name}`);
+            }
+          }
+        } else {
+          // Недостаточно ресурсов - не списываем ничего
+          console.log(`⚠️ Недостаточно ресурсов "${resourceName}" для списания. Требуется: ${resourceAmount}, доступно: ${totalAvailable}. Пропускаем.`);
+        }
+      }
+      
+      // Положительные изменения для бункера всегда применяем
+      else if (change.toLowerCase().includes('плюс') || 
+               change.toLowerCase().includes('+') ||
+               change.toLowerCase().includes('получает')) {
+        
+        // Добавляем ресурсы в бункер (можно добавить в специальное хранилище бункера)
+        // Пока просто логируем
+        console.log(`✅ Бункер получает: ${change}`);
+      }
+      
       continue;
     }
     
+    // Здесь остальной код для обработки изменений игроков...
     const player = game.players.find(p => p.name === playerName);
     if (!player) continue;
     
