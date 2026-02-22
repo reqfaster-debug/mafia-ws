@@ -2407,17 +2407,17 @@ function pickCategoryAvoiding(avoidSet = new Set()) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-// 5) Генератор промпта с принудительной категорией + усилением уникальности на повторных попытках
+// 5) Генератор промпта с принудительной категорией
 function generateEventPromptWithCategory(game, category, extraUniqInstructions = "") {
   // Берём ТОЛЬКО живых и не изгнанных
   const activePlayers = (game.players || []).filter(p => p && p.status !== 'kicked' && p.status !== 'dead');
 
-  // Получаем последние 10 событий для контекста (можно больше)
+  // Получаем последние 10 событий для контекста
   const recentEvents = (game.events || []).slice(0, 10);
 
   let recentEventsText = '';
   if (recentEvents.length > 0) {
-    recentEventsText = 'Предыдущие события (НЕ ПОВТОРЯЙ ИХ! НЕ ПОВТОРЯЙ СЦЕНАРИЙ/ПРИЧИНУ/ИТОГ/ПОСЛЕДСТВИЯ):\n';
+    recentEventsText = 'Предыдущие события (НЕ ПОВТОРЯЙ ИХ!):\n';
     recentEvents.forEach((e, i) => {
       const t = (e.text || "").replace(/\s+/g, " ").trim();
       recentEventsText += `${i + 1}. ${t.substring(0, 140)}...\n`;
@@ -2433,43 +2433,42 @@ function generateEventPromptWithCategory(game, category, extraUniqInstructions =
 
   const allowedInventory = GAME_DATA.characteristics.inventory.slice(0, 20).map(i => `  - ${i}`).join('\n');
 
-  return `Ты генератор событий для постапокалиптической игры "Бункер".
+  return `Ты генератор событий для игры "Бункер".
 
-ВАЖНОЕ ПРАВИЛО: Игроки еще НЕ ВОШЛИ в бункер. Они находятся снаружи, рядом со входом в бункер. Все события происходят СНАРУЖИ.
+ПРАВИЛА:
+- Игроки снаружи бункера, рядом со входом
+- Пиши просто и коротко, без лишних описаний
+- Сразу переходи к сути события
+- Не убивай игроков (только травмы)
+- Используй ТОЛЬКО предметы из списка
 
-КАТЕГОРИЯ события (строго придерживайся темы): ${category}
+КАТЕГОРИЯ: ${category}
 
-ЗАПРЕЩЕНО:
-- НЕЛЬЗЯ использовать фразу "Снаружи раздался оглушительный грохот"
-- НЕЛЬЗЯ использовать падение метеоритов/самолетов
-- НЕЛЬЗЯ убивать игроков
-- НЕЛЬЗЯ создавать предметы, которых нет в списке разрешенного инвентаря
-- НЕЛЬЗЯ описывать события внутри бункера
-
-ИГРОКИ (активные):
+ИГРОКИ:
 ${playersList}
 
-РАЗРЕШЕННЫЙ ИНВЕНТАРЬ (можно давать ТОЛЬКО эти предметы):
+РАЗРЕШЕННЫЙ ИНВЕНТАРЬ:
 ${allowedInventory}
 
 ${recentEventsText}
 
-ДОП. ТРЕБОВАНИЕ УНИКАЛЬНОСТИ:
-- Событие должно быть НЕ ПОХОЖЕ на предыдущие по сценарию, причинам, действиям, развязке и последствиям.
-- Не используй те же объекты/персонажей/находки как в недавних событиях.
-${extraUniqInstructions}
+НАПИШИ СОБЫТИЕ В ТАКОМ ФОРМАТЕ:
 
-Напиши ОДНО событие длиной 4-6 предложений. Опиши, что происходит СНАРУЖИ, рядом с бункером.
+[Короткое описание того, что случилось. 3-4 предложения, сразу по делу. Без длинных вступлений.]
 
-Потом пустую строку и список последствий в формате:
 Последствия:
-- Имя игрока: что изменилось (только из разрешенного инвентаря или болезней)
-- Бункер: что изменилось (если припасы добавлены/утеряны)
-`;
+
+- [Имя игрока]: [что изменилось] (только если характеристика может быть изменена событием)
+- [Имя игрока]: [что изменилось]
+- Бункер: [что изменилось]
+
+ВАЖНО: Каждое последствие с новой строки и с дефиса. 
+ПРИМЕР последствий: "получает нож", "теряет аптечку", "царапина от собаки", "+2 месяца еды", "сломан генератор"
+
+${extraUniqInstructions}`;
 }
 
 
-// Функция для валидации и очистки события
 // Функция для валидации и очистки события
 function validateAndCleanEvent(rawText, game) {
   let cleaned = rawText;
@@ -2477,114 +2476,123 @@ function validateAndCleanEvent(rawText, game) {
   // Удаляем возможные маркеры "Тип события:" если они есть
   cleaned = cleaned.replace(/Тип события:.*?(?=\n\n|$)/gis, '').trim();
   
-  // Проверяем секцию "Последствия:"
-  const consequencesMatch = cleaned.match(/Последствия:([\s\S]*?)(?=$|(?=\n\n))/i);
+  // Разделяем событие на основную часть и последствия
+  const parts = cleaned.split(/\n\s*Последствия:/i);
   
-  if (consequencesMatch) {
-    const consequencesSection = consequencesMatch[1];
-    const lines = consequencesSection.split('\n').filter(line => line.trim().startsWith('-'));
+  if (parts.length < 2) {
+    // Если нет секции "Последствия:", возвращаем как есть
+    return cleaned;
+  }
+  
+  const mainPart = parts[0].trim();
+  let consequencesPart = parts[1].trim();
+  
+  // Валидируем последствия
+  const lines = consequencesPart.split('\n').filter(line => line.trim().startsWith('-'));
+  const validatedConsequences = [];
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
     
-    // Валидируем каждую строку последствий
-    const validatedConsequences = [];
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      // Проверяем формат: "- Имя: что изменилось"
-      const match = trimmedLine.match(/^-\s*([^:]+):\s*(.+)$/);
-      if (!match) continue;
-      
-      const [, playerName, change] = match;
-      
-      // Находим игрока по имени
-      const player = game.players.find(p => p.name === playerName);
-      if (!player) continue; // Игрок не найден - пропускаем
-      
-      // Проверяем, что характеристика игрока не раскрыта
-      // Это ключевое условие! Нельзя менять то, что не раскрыто
-      
-      // Проверяем на добавление в инвентарь
-      if (change.toLowerCase().includes('получает') || 
-          change.toLowerCase().includes('находит') ||
-          change.toLowerCase().includes('добавляется')) {
-        
-        // Ищем название предмета в строке
-        let itemFound = false;
-        for (const item of GAME_DATA.characteristics.inventory) {
-          if (change.includes(item)) {
-            // Проверяем, раскрыт ли инвентарь у игрока
-            if (!player.characteristics.inventory.revealed) {
-              console.log(`⚠️ Попытка изменить инвентарь игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
-              continue;
-            }
-            itemFound = true;
-            break;
-          }
-        }
-        
-        if (!itemFound) {
-          console.log(`⚠️ Попытка добавить неразрешенный предмет: ${change}`);
-          continue;
-        }
-        
+    // Проверяем формат: "- Имя: что изменилось"
+    const match = trimmedLine.match(/^-\s*([^:]+):\s*(.+)$/);
+    if (!match) {
+      // Если формат неверный, но это похоже на последствие, оставляем как есть
+      if (trimmedLine.startsWith('-')) {
         validatedConsequences.push(line);
       }
-      
-      // Проверяем на удаление из инвентаря
-      else if (change.toLowerCase().includes('теряет') ||
-               change.toLowerCase().includes('пропадает') ||
-               change.toLowerCase().includes('ломается')) {
-        
-        // Проверяем, раскрыт ли инвентарь у игрока
-        if (!player.characteristics.inventory.revealed) {
-          console.log(`⚠️ Попытка удалить предмет у игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
-          continue;
-        }
-        
-        validatedConsequences.push(line);
-      }
-      
-      // Проверяем на изменение здоровья
-      else if (change.toLowerCase().includes('заболевает') ||
-               change.toLowerCase().includes('получает травму') ||
-               change.toLowerCase().includes('заражается')) {
-        
-        // Проверяем, раскрыто ли здоровье у игрока
-        if (!player.characteristics.health.revealed) {
-          console.log(`⚠️ Попытка изменить здоровье игрока ${playerName}, но здоровье не раскрыто! Пропускаем.`);
-          continue;
-        }
-        
-        // Проверяем, что болезнь существует в списке
-        let diseaseFound = false;
-        for (const disease of GAME_DATA.characteristics.health) {
-          if (change.includes(disease.name)) {
-            diseaseFound = true;
-            break;
-          }
-        }
-        
-        if (diseaseFound) {
-          validatedConsequences.push(line);
-        } else {
-          console.log(`⚠️ Попытка добавить несуществующую болезнь: ${change}`);
-        }
-      }
-      
-      // Изменения бункера всегда разрешены
-      else if (change.toLowerCase().includes('бункер')) {
-        validatedConsequences.push(line);
-      }
+      continue;
     }
     
-    // Если все последствия были отфильтрованы, удаляем секцию последствий
-    if (validatedConsequences.length === 0) {
-      cleaned = cleaned.replace(/Последствия:[\s\S]*$/i, '').trim();
-    } else {
-      // Заменяем секцию последствий на отвалидированную
-      const newConsequencesSection = 'Последствия:\n' + validatedConsequences.join('\n');
-      cleaned = cleaned.replace(/Последствия:[\s\S]*$/i, newConsequencesSection);
+    const [, playerName, change] = match;
+    
+    // Находим игрока по имени
+    const player = game.players.find(p => p.name === playerName);
+    if (!player) {
+      // Если игрок не найден, но это может быть "Бункер:" - оставляем
+      if (playerName.toLowerCase() === 'бункер') {
+        validatedConsequences.push(line);
+      }
+      continue;
     }
+    
+    // Проверяем на добавление в инвентарь
+    if (change.toLowerCase().includes('получает') || 
+        change.toLowerCase().includes('находит') ||
+        change.toLowerCase().includes('добавляется')) {
+      
+      // Проверяем, раскрыт ли инвентарь у игрока
+      if (!player.characteristics.inventory.revealed) {
+        console.log(`⚠️ Попытка изменить инвентарь игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
+        continue;
+      }
+      
+      // Проверяем, что предмет существует в списке
+      let itemFound = false;
+      for (const item of GAME_DATA.characteristics.inventory) {
+        if (change.includes(item)) {
+          itemFound = true;
+          break;
+        }
+      }
+      
+      if (!itemFound) {
+        console.log(`⚠️ Попытка добавить неразрешенный предмет: ${change}`);
+        continue;
+      }
+      
+      validatedConsequences.push(line);
+    }
+    
+    // Проверяем на удаление из инвентаря
+    else if (change.toLowerCase().includes('теряет') ||
+             change.toLowerCase().includes('пропадает') ||
+             change.toLowerCase().includes('ломается')) {
+      
+      // Проверяем, раскрыт ли инвентарь у игрока
+      if (!player.characteristics.inventory.revealed) {
+        console.log(`⚠️ Попытка удалить предмет у игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
+        continue;
+      }
+      
+      validatedConsequences.push(line);
+    }
+    
+    // Проверяем на изменение здоровья
+    else if (change.toLowerCase().includes('заболевает') ||
+             change.toLowerCase().includes('получает травму') ||
+             change.toLowerCase().includes('заражается') ||
+             change.toLowerCase().includes('царапины') ||
+             change.toLowerCase().includes('ушиб') ||
+             change.toLowerCase().includes('рана')) {
+      
+      // Проверяем, раскрыто ли здоровье у игрока
+      if (!player.characteristics.health.revealed) {
+        console.log(`⚠️ Попытка изменить здоровье игрока ${playerName}, но здоровье не раскрыто! Пропускаем.`);
+        continue;
+      }
+      
+      validatedConsequences.push(line);
+    }
+    
+    // Изменения бункера всегда разрешены
+    else if (playerName.toLowerCase() === 'бункер' ||
+             change.toLowerCase().includes('бункер')) {
+      validatedConsequences.push(line);
+    }
+    
+    // Другие типы последствий оставляем как есть
+    else {
+      validatedConsequences.push(line);
+    }
+  }
+  
+  // Собираем событие обратно
+  if (validatedConsequences.length > 0) {
+    cleaned = mainPart + '\n\nПоследствия:\n' + validatedConsequences.join('\n');
+  } else {
+    // Если все последствия отфильтрованы, оставляем только основную часть
+    cleaned = mainPart;
   }
   
   return cleaned;
