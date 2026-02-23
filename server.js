@@ -2273,7 +2273,7 @@ function generateEventPromptWithCategory(game, category, extraUniqInstructions =
       const t = (e.text || "").replace(/\s+/g, " ").trim();
       const eventPreview = t.substring(0, 200) + (t.length > 200 ? '...' : '');
       recentEventsText += `${i + 1}. ${eventPreview}\n`;
-      
+
       if (e.consequences) {
         const consPreview = e.consequences.substring(0, 100) + (e.consequences.length > 100 ? '...' : '');
         recentEventsText += `   Последствия: ${consPreview}\n`;
@@ -2283,121 +2283,118 @@ function generateEventPromptWithCategory(game, category, extraUniqInstructions =
     recentEventsText = 'Первое событие.';
   }
 
+  // СОБИРАЕМ РЕАЛЬНЫЙ ИНВЕНТАРЬ КАЖДОГО ИГРОКА
+  let playersInventoryList = '';
+  activePlayers.forEach(p => {
+    if (p.characteristics.inventory.revealed && p.characteristics.inventory.value !== '—') {
+      const items = p.characteristics.inventory.value.split(',').map(i => i.trim());
+      playersInventoryList += `- ${p.name} имеет: ${items.join(', ')}\n`;
+    } else {
+      playersInventoryList += `- ${p.name}: инвентарь скрыт\n`;
+    }
+  });
+
   let playersList = '';
   activePlayers.forEach(p => {
     playersList += `- ${p.name}\n`;
   });
 
-  const allowedInventory = GAME_DATA.characteristics.inventory.slice(0, 30).map(i => `- ${i}`).join('\n');
-  
   const eventType = Math.random() < 0.6 ? 'НЕГАТИВНОЕ' : 'ПОЗИТИВНОЕ';
 
-  return `Ты генератор событий для игры "Бункер". Пиши динамичные, захватывающие события с неожиданными поворотами.
+  return `Ты генератор событий для игры "Бункер". 
 
-ВАЖНЫЕ ОГРАНИЧЕНИЯ:
-1. В событии участвуют ТОЛЬКО 1-2 игрока, НЕ ВСЯ ГРУППА. Остальные остаются в бункере.
-2. НЕ ИСПОЛЬЗУЙ слова "группа", "отряд", "все", "команда". Только конкретные имена игроков.
-3. ЗАПРЕЩЕНО находить другой бункер или проникать в него. Максимум - можно узнать информацию о соседнем бункере (слухи, радиоперехват, старые карты).
-4. ЗАПРЕЩЕНО убивать игроков. Максимум - тяжелые травмы.
-5. **КРИТИЧЕСКИ ВАЖНО: НЕЛЬЗЯ придумывать предметы, которых нет в списке РАЗРЕШЕННОГО ИНВЕНТАРЯ. Если предмета нет в списке - его не существует в игре.**
+**КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА:**
+
+1. **МОЖНО ИСПОЛЬЗОВАТЬ ТОЛЬКО ПРЕДМЕТЫ, КОТОРЫЕ РЕАЛЬНО ЕСТЬ У ИГРОКОВ:**
+   - Посмотри на список "ИНВЕНТАРЬ ИГРОКОВ" ниже
+   - Если у игрока инвентарь скрыт - НЕЛЬЗЯ писать, что он что-то брал с собой
+   - Если предмета нет в инвентаре игрока - его НЕ СУЩЕСТВУЕТ для этого игрока
+
+2. **ПОСЛЕДСТВИЯ ДОЛЖНЫ БЫТЬ ТОЛЬКО ТАКИМИ:**
+   - Для бункера: "+Х месяцев еды" или "минус Х месяцев еды"
+   - Для игроков: только травмы/болезни из списка разрешенных болезней
+   - Для инвентаря: можно добавить/удалить ТОЛЬКО предметы из списка разрешенного инвентаря, но только если инвентарь игрока РАСКРЫТ
+
+3. **НЕЛЬЗЯ ПРИДУМЫВАТЬ НОВЫЕ ПРЕДМЕТЫ:**
+   - Нельзя писать про топор, если его нет в инвентаре
+   - Нельзя писать про пилу, бензопилу, фонарик, если их нет
+   - Нельзя писать, что игроки "взяли с собой" то, чего у них нет
 
 ПРЕДЫДУЩИЕ СОБЫТИЯ:
 ${recentEventsText}
 
-ПРАВИЛА ФОРМАТИРОВАНИЯ:
-1. Текст события — МИНИМУМ 5 предложений (максимум 8)
-2. Каждое предложение с новой строки
-3. Без кавычек, звездочек, нумерации
-4. После текста пустая строка
-5. Затем "Последствия:" с новой строки
-6. Каждое последствие с новой строки: "- Имя: изменение"
-7. Каждое последствие заканчивается <br> (включая ПЕРВОЕ)
-8. Между последствиями НЕТ пустых строк
-
-ВАЖНО: Последствия должны быть КОНКРЕТНЫМИ и СООТВЕТСТВОВАТЬ РЕАЛЬНОСТИ:
-- Если инвентарь игрока НЕ РАСКРЫТ - нельзя писать про потерю предметов
-- Если инвентарь РАСКРЫТ - можно добавлять/удалять ТОЛЬКО из разрешенного списка
-- Для бункера всегда указывать конкретные изменения: "+3 месяца еды", "минус 2 рулона бинтов"
-- Не писать "потерян фонарик", если его у игрока не было
-- Не писать про предметы, которых нет в списке разрешенного инвентаря
-
-ТИП СОБЫТИЯ: ${eventType}
-
-ЕСЛИ НЕГАТИВНОЕ (60%):
-- Нападение животных/людей/мутантов на одного-двух игроков
-- Несчастный случай (падение, обвал, пожар, взрыв)
-- Природная опасность (буря, наводнение, мороз)
-- Болезнь или заражение
-- Поломка снаряжения во время вылазки
-- Событие должно иметь неожиданный поворот или осложнение
-- Последствия: травмы, потеря предметов, уменьшение запасов бункера
-
-ЕСЛИ ПОЗИТИВНОЕ (40%):
-- Находка припасов одним-двумя игроками
-- Обнаружение схрона
-- Удачная охота или рыбалка
-- Полезная находка (инструменты, медикаменты)
-- Встреча с дружелюбными выжившими (обмен, информация)
-- Событие должно иметь элемент риска или неожиданности
-- Последствия: добавление предметов, увеличение запасов (+X месяцев)
-
-ПРИМЕРЫ ПРАВИЛЬНЫХ СОБЫТИЙ (ориентируйся на стиль):
-
-НЕГАТИВНОЕ (нападение):
-Алексей и Дима решили обследовать старую больницу на окраине города, надеясь найти медикаменты.
-Внутри было темно и сыро, повсюду валялись перевернутые каталоги и медицинские карты.
-Внезапно из темноты коридора выскочил обезумевший мутант с окровавленным скальпелем.
-Он набросился на Алексея, полоснул по руке и скрылся в вентиляции, пока Дима пытался прийти в себя.
-Пришлось срочно ретироваться, но в суматохе Дима потерял рюкзак с собранными припасами.
-
-Последствия:
-- Алексей: глубокая рваная рана руки (средняя)<br>
-- Дима: потерян рюкзак с припасами<br>
-- Бункер: минус 2 месяца еды<br>
-
-НЕГАТИВНОЕ (несчастный случай с потерей инвентаря):
-Алексей взял топор и отправился нарубить дров.
-Во время работы топор соскочил и поранил ему ногу.
-Пришлось бросить дрова и хромать обратно в бункер.
-
-Последствия:
-- Алексей: рваная рана ноги (легкая)<br>
-- Бункер: дрова не принесены<br>
-
-ПОЗИТИВНОЕ (находка с риском):
-Алексей и Дима наткнулись на заброшенный военный склад, который чудом не разграбили.
-Внутри оказались ящики с тушенкой, галетами и даже несколько ящиков с патронами.
-Пока Алексей грузил припасы, Дима провалился в подпол и сломал руку.
-Оказалось, что подпол был заминирован растяжками, но, к счастью, они не сработали от времени.
-Алексею пришлось вытаскивать Диму, но припасы все-таки забрали.
-
-Последствия:
-- Дима: перелом руки (средний)<br>
-- Бункер: +6 месяцев еды, 500 патронов<br>
+ИНВЕНТАРЬ ИГРОКОВ (ТОЛЬКО ЭТИ ПРЕДМЕТЫ МОЖНО ИСПОЛЬЗОВАТЬ):
+${playersInventoryList}
 
 ИГРОКИ (активные):
 ${playersList}
 
-РАЗРЕШЕННЫЙ ИНВЕНТАРЬ (ТОЛЬКО ЭТИ ПРЕДМЕТЫ МОЖНО ИСПОЛЬЗОВАТЬ):
-${allowedInventory}
+ТИП СОБЫТИЯ: ${eventType}
 
-РАЗРЕШЕННЫЕ БОЛЕЗНИ:
+ЕСЛИ НЕГАТИВНОЕ:
+- Нападение, несчастный случай, болезнь
+- Последствия: травмы из списка болезней, потеря еды
+
+ЕСЛИ ПОЗИТИВНОЕ:
+- Находка припасов, обнаружение схрона
+- Последствия: +Х месяцев еды, добавление предметов из разрешенного списка
+
+**РАЗРЕШЕННЫЕ БОЛЕЗНИ:**
 - Перелом, Вывих, Растяжение, Рваная рана, Колотая рана, Сотрясение мозга
 - Пневмония, Ангина, ОРВИ, Отравление, Ожог, Обморожение
 
-${extraUniqInstructions}
+**ПРИМЕРЫ ПРАВИЛЬНЫХ СОБЫТИЙ:**
 
-НАПИШИ ОДНО СОБЫТИЕ (${eventType}) В ЭТОМ ФОРМАТЕ (МИНИМУМ 5 ПРЕДЛОЖЕНИЙ):
-
-[Предложение 1 - кто и куда пошел/что случилось]
-[Предложение 2 - развитие ситуации]
-[Предложение 3 - неожиданный поворот]
-[Предложение 4 - действие/реакция]
-[Предложение 5 - развязка/итог]
+НЕГАТИВНОЕ (травма, инвентарь скрыт):
+Алексей и Дима пошли проверить старую водонапорную башню.
+Лестница под Алексеем обрушилась, он упал с высоты.
+Дима спустился помочь, но в темноте наступил на острый металл.
+Оба получили травмы, пришлось возвращаться без воды.
 
 Последствия:
-- [Имя]: [конкретное изменение]<br>
-- [Имя/Бункер]: [конкретное изменение]<br>`;
+- Алексей: перелом ноги (средний)<br>
+- Дима: колотая рана стопы (легкая)<br>
+
+НЕГАТИВНОЕ (потеря предмета, инвентарь раскрыт):
+Алексей взял охотничий нож и пошел нарубить веток.
+Во время работы нож выскользнул и упал в расщелину.
+Достать не смог, пришлось возвращаться без ножа и без дров.
+
+Последствия:
+- Алексей: потерян охотничий нож<br>
+- Бункер: минус 1 месяц дров<br>
+
+ПОЗИТИВНОЕ (находка):
+Дима нашел заброшенный погреб недалеко от бункера.
+Внутри обнаружил банки с консервами и ящик с медикаментами.
+Пришлось два раза ходить туда-сюда, чтобы всё перенести.
+На обратном пути чуть не провалился в старый колодец.
+
+Последствия:
+- Бункер: +3 месяца еды<br>
+- Бункер: аптечка<br>
+
+ПРАВИЛА ФОРМАТИРОВАНИЯ:
+1. Текст события — МИНИМУМ 5 предложений
+2. Каждое предложение с новой строки
+3. После текста пустая строка
+4. Затем "Последствия:" с новой строки
+5. Каждое последствие с новой строки: "- Имя: изменение<br>"
+6. Каждое последствие ОБЯЗАТЕЛЬНО заканчивается <br>
+
+${extraUniqInstructions}
+
+НАПИШИ ОДНО СОБЫТИЕ (${eventType}) В ЭТОМ ФОРМАТЕ:
+
+[Предложение 1]
+[Предложение 2]
+[Предложение 3]
+[Предложение 4]
+[Предложение 5]
+
+Последствия:
+- [Имя]: [только травма из списка или потеря предмета, если он есть]<br>
+- [Бункер]: [только +еда или -еда или предмет из списка]<br>`;
 }
 
 
@@ -2436,7 +2433,7 @@ function isTooSimilarToRecent(candidateText, game, options = {}) {
 // Дополнительная функция для проверки уникальности последствий
 function areConsequencesUnique(newConsequences, recentEvents) {
   if (!recentEvents || recentEvents.length === 0) return true;
-  
+
   const recentItems = new Set();
   recentEvents.forEach(event => {
     if (event.consequences) {
@@ -2449,7 +2446,7 @@ function areConsequencesUnique(newConsequences, recentEvents) {
       });
     }
   });
-  
+
   // Проверяем новые последствия
   const lines = newConsequences.split('\n');
   for (const line of lines) {
@@ -2461,7 +2458,7 @@ function areConsequencesUnique(newConsequences, recentEvents) {
       }
     }
   }
-  
+
   return true;
 }
 
@@ -2506,12 +2503,12 @@ async function callModelWithTimeout(model, prompt, timeoutMs = 20000) {
 // Функция для инициализации ресурсов бункера
 function initializeBunkerResources(game) {
   game.bunkerResources = [];
-  
+
   game.players.forEach(player => {
-    if (player.characteristics.inventory.revealed && 
-        player.characteristics.inventory.value && 
-        player.characteristics.inventory.value !== '—') {
-      
+    if (player.characteristics.inventory.revealed &&
+      player.characteristics.inventory.value &&
+      player.characteristics.inventory.value !== '—') {
+
       const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
       items.forEach(item => {
         if (item && item !== '—') {
@@ -2520,7 +2517,7 @@ function initializeBunkerResources(game) {
       });
     }
   });
-  
+
   console.log(`🏦 Инициализированы ресурсы бункера: ${game.bunkerResources.length} предметов`);
 }
 
@@ -2528,24 +2525,24 @@ function initializeBunkerResources(game) {
 // Функция для генерации события с валидацией
 async function generateValidatedEvent(game) {
   console.log('🎲 Этап 1: Генерация события...');
-  
+
   // Добавляем проверку похожести
   const maxAttempts = 6;
   const similarityThreshold = 0.35;
-  
+
   let lastResult = null;
   let lastReport = null;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      
+
     // Добавляем инструкцию для регенерации, если это не первая попытка
-    const extraInstructions = attempt === 1 ? "" : 
+    const extraInstructions = attempt === 1 ? "" :
       `ПОПЫТКА #${attempt}: Предыдущий вариант оказался слишком похож на недавнее событие.
 ПОЛНОСТЬЮ ПЕРЕПРИДУМАЙ событие: другая причина, другая находка, другая опасность.
 НЕ ИСПОЛЬЗУЙ те же локации и предметы, что в предыдущем варианте.`;
-    
-const storyPrompt = generateEventPromptWithCategory(game, "", extraInstructions);
-    
+
+    const storyPrompt = generateEventPromptWithCategory(game, "", extraInstructions);
+
     let storyResult = null;
     for (const model of STORY_MODELS) {
       try {
@@ -2556,20 +2553,20 @@ const storyPrompt = generateEventPromptWithCategory(game, "", extraInstructions)
         console.log(`❌ Модель ${model} не ответила:`, error.message);
       }
     }
-    
+
     if (!storyResult) {
       throw new Error('Не удалось сгенерировать событие ни одной моделью');
     }
-    
+
     // Первичная очистка
     const cleanedResult = validateAndCleanEvent(storyResult, game);
-    
+
     // Проверяем на похожесть текста
     const report = isTooSimilarToRecent(cleanedResult, game, {
       recentCount: 10,
       threshold: similarityThreshold
     });
-    
+
     // 👇 ДОБАВЛЯЕМ ПРОВЕРКУ УНИКАЛЬНОСТИ ПОСЛЕДСТВИЙ
     let consequencesUnique = true;
     if (game.events && game.events.length > 0) {
@@ -2580,46 +2577,46 @@ const storyPrompt = generateEventPromptWithCategory(game, "", extraInstructions)
         consequencesUnique = areConsequencesUnique(consequencesText, game.events);
       }
     }
-    
+
     lastResult = cleanedResult;
     lastReport = report;
-    
+
     // Успех если текст уникален И последствия уникальны
     if (!report.tooSimilar && consequencesUnique) {
       console.log(`✅ Найдено уникальное событие с ${attempt} попытки (сходство текста: ${report.maxSim.toFixed(2)})`);
       break;
     }
-    
+
     // Логируем причину неудачи
     if (report.tooSimilar) {
       console.log(`⚠️ Попытка ${attempt}: текст слишком похож (сходство: ${report.maxSim.toFixed(2)})`);
     } else if (!consequencesUnique) {
       console.log(`⚠️ Попытка ${attempt}: последствия повторяются`);
     }
-    
+
     // Если это последняя попытка, продолжаем с последним результатом
     if (attempt === maxAttempts) {
       console.log(`⚠️ Достигнут лимит попыток, используем последний вариант`);
     }
   }
-  
+
   console.log('🔍 Этап 2: Валидация события...');
-  
+
   // Собираем информацию о текущем состоянии игры
   const gameState = {
     players: game.players.map(p => ({
       name: p.name,
-      inventory: p.characteristics.inventory.revealed ? 
+      inventory: p.characteristics.inventory.revealed ?
         p.characteristics.inventory.value : 'скрыт',
-      health: p.characteristics.health.revealed ? 
+      health: p.characteristics.health.revealed ?
         p.characteristics.health.value : 'скрыт'
     })),
     bunkerResources: game.bunkerResources || [],
     allowedItems: GAME_DATA.characteristics.inventory.slice(0, 30),
-    allowedDiseases: ['Перелом', 'Вывих', 'Растяжение', 'Рваная рана', 'Сотрясение мозга', 
-                      'Пневмония', 'Ангина', 'ОРВИ', 'Отравление', 'Ожог', 'Обморожение']
+    allowedDiseases: ['Перелом', 'Вывих', 'Растяжение', 'Рваная рана', 'Сотрясение мозга',
+      'Пневмония', 'Ангина', 'ОРВИ', 'Отравление', 'Ожог', 'Обморожение']
   };
-  
+
   const validationPrompt = `Ты валидатор событий для игры "Бункер". Проверь сгенерированное событие и исправь его, если нужно.
 
 ТЕКУЩЕЕ СОСТОЯНИЕ ИГРЫ:
@@ -2669,15 +2666,15 @@ ${lastResult}
       console.log(`❌ Модель ${model} не ответила:`, error.message);
     }
   }
-  
+
   if (!validatedResult) {
     console.log('⚠️ Валидация не удалась, используем исходное событие');
     validatedResult = lastResult;
   }
-  
+
   // Финальная очистка после валидации
   const finalCleanedResult = validateAndCleanEvent(validatedResult, game);
-  
+
   return {
     text: finalCleanedResult,
     meta: {
@@ -2690,63 +2687,63 @@ ${lastResult}
 // Функция для валидации и очистки события
 function validateAndCleanEvent(rawText, game) {
   let cleaned = rawText;
-  
+
   // Удаляем возможные маркеры "Тип события:" если они есть
   cleaned = cleaned.replace(/Тип события:.*?(?=\n\n|$)/gis, '').trim();
-  
+
   // Разделяем событие на основную часть и последствия
   const parts = cleaned.split(/\n\s*Последствия:/i);
-  
+
   if (parts.length < 2) {
     return cleaned;
   }
-  
+
   const mainPart = parts[0].trim();
   let consequencesPart = parts[1].trim();
-  
+
   // Валидируем последствия
   const lines = consequencesPart.split('\n').filter(line => line.trim().startsWith('-'));
   const validatedConsequences = [];
-  
+
   for (const line of lines) {
     const trimmedLine = line.trim();
-    
+
     // Проверяем формат: "- Имя: что изменилось"
     const match = trimmedLine.match(/^-\s*([^:]+):\s*(.+)$/);
     if (!match) {
       continue;
     }
-    
+
     const [, playerName, change] = match;
     const player = game.players.find(p => p.name === playerName);
-    
+
     // Если это не игрок, а "Бункер" - всегда пропускаем
     if (!player && playerName.toLowerCase() === 'бункер') {
       validatedConsequences.push(line);
       continue;
     }
-    
+
     // Если игрок не найден - пропускаем
     if (!player) {
       console.log(`⚠️ Игрок ${playerName} не найден, пропускаем последствие`);
       continue;
     }
-    
+
     // Проверяем на потерю предмета
     if (change.toLowerCase().includes('теряет') ||
-        change.toLowerCase().includes('потерял') ||
-        change.toLowerCase().includes('потеряла') ||
-        change.toLowerCase().includes('пропадает') ||
-        change.toLowerCase().includes('ломается') ||
-        change.toLowerCase().includes('сломал') ||
-        change.toLowerCase().includes('сломала')) {
-      
+      change.toLowerCase().includes('потерял') ||
+      change.toLowerCase().includes('потеряла') ||
+      change.toLowerCase().includes('пропадает') ||
+      change.toLowerCase().includes('ломается') ||
+      change.toLowerCase().includes('сломал') ||
+      change.toLowerCase().includes('сломала')) {
+
       // Проверяем, раскрыт ли инвентарь
       if (!player.characteristics.inventory.revealed) {
         console.log(`⚠️ Попытка удалить предмет у игрока ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
         continue;
       }
-      
+
       // Ищем какой предмет теряется
       let lostItem = null;
       for (const item of GAME_DATA.characteristics.inventory) {
@@ -2755,44 +2752,44 @@ function validateAndCleanEvent(rawText, game) {
           break;
         }
       }
-      
+
       if (!lostItem) {
         // Если предмет не найден в списке, пытаемся извлечь из текста
-        const itemMatch = change.match(/теряет\s+(.+?)(?:\s|$)/i) || 
-                         change.match(/потерял\s+(.+?)(?:\s|$)/i) ||
-                         change.match(/ломается\s+(.+?)(?:\s|$)/i);
+        const itemMatch = change.match(/теряет\s+(.+?)(?:\s|$)/i) ||
+          change.match(/потерял\s+(.+?)(?:\s|$)/i) ||
+          change.match(/ломается\s+(.+?)(?:\s|$)/i);
         if (itemMatch) {
           lostItem = itemMatch[1].trim();
         }
       }
-      
+
       if (lostItem) {
         // Проверяем, есть ли у игрока этот предмет
         const playerItems = parseCharacteristicValue('inventory', player.characteristics.inventory.value);
         const allItems = [playerItems.main, ...playerItems.items].filter(i => i && i !== '—');
-        
+
         if (!allItems.includes(lostItem) && !allItems.some(i => i.includes(lostItem))) {
           console.log(`⚠️ У игрока ${playerName} нет предмета "${lostItem}", пропускаем потерю`);
           continue;
         }
       }
-      
+
       validatedConsequences.push(line);
     }
-    
+
     // Проверяем на добавление предмета
-    else if (change.toLowerCase().includes('получает') || 
-             change.toLowerCase().includes('находит') ||
-             change.toLowerCase().includes('нашёл') ||
-             change.toLowerCase().includes('нашла') ||
-             change.toLowerCase().includes('добавляется')) {
-      
+    else if (change.toLowerCase().includes('получает') ||
+      change.toLowerCase().includes('находит') ||
+      change.toLowerCase().includes('нашёл') ||
+      change.toLowerCase().includes('нашла') ||
+      change.toLowerCase().includes('добавляется')) {
+
       // Проверяем, раскрыт ли инвентарь
       if (!player.characteristics.inventory.revealed) {
         console.log(`⚠️ Попытка добавить предмет игроку ${playerName}, но инвентарь не раскрыт! Пропускаем.`);
         continue;
       }
-      
+
       // Проверяем, что предмет существует в списке
       let itemFound = false;
       for (const item of GAME_DATA.characteristics.inventory) {
@@ -2801,46 +2798,46 @@ function validateAndCleanEvent(rawText, game) {
           break;
         }
       }
-      
+
       if (!itemFound) {
         console.log(`⚠️ Попытка добавить неразрешенный предмет: ${change}`);
         continue;
       }
-      
+
       validatedConsequences.push(line);
     }
-    
+
     // Проверяем на изменение здоровья
     else if (change.toLowerCase().includes('травма') ||
-             change.toLowerCase().includes('рана') ||
-             change.toLowerCase().includes('перелом') ||
-             change.toLowerCase().includes('вывих') ||
-             change.toLowerCase().includes('ушиб') ||
-             change.toLowerCase().includes('ожог') ||
-             change.toLowerCase().includes('обморожение') ||
-             change.toLowerCase().includes('болезнь') ||
-             change.toLowerCase().includes('заболевание')) {
-      
+      change.toLowerCase().includes('рана') ||
+      change.toLowerCase().includes('перелом') ||
+      change.toLowerCase().includes('вывих') ||
+      change.toLowerCase().includes('ушиб') ||
+      change.toLowerCase().includes('ожог') ||
+      change.toLowerCase().includes('обморожение') ||
+      change.toLowerCase().includes('болезнь') ||
+      change.toLowerCase().includes('заболевание')) {
+
       // Проверяем, раскрыто ли здоровье
       if (!player.characteristics.health.revealed) {
         console.log(`⚠️ Попытка изменить здоровье игрока ${playerName}, но здоровье не раскрыто! Пропускаем.`);
         continue;
       }
-      
+
       validatedConsequences.push(line);
     }
-    
+
     // Изменения бункера всегда разрешены
     else if (playerName.toLowerCase() === 'бункер') {
       validatedConsequences.push(line);
     }
-    
+
     // Другие типы последствий пропускаем
     else {
       console.log(`⚠️ Неизвестный тип последствия для игрока ${playerName}: ${change}`);
     }
   }
-  
+
   // Собираем событие обратно
   if (validatedConsequences.length > 0) {
     cleaned = mainPart + '\n\nПоследствия:\n' + validatedConsequences.join('\n');
@@ -2848,72 +2845,72 @@ function validateAndCleanEvent(rawText, game) {
     cleaned = mainPart;
     console.log(`⚠️ Все последствия были отфильтрованы для события: ${mainPart.substring(0, 100)}...`);
   }
-  
+
   return cleaned;
 }
 
 // Функция для применения последствий события к игре
 function applyEventConsequences(eventText, game) {
   const consequencesMatch = eventText.match(/Последствия:([\s\S]*?)(?=$|(?=\n\n))/i);
-  
+
   if (!consequencesMatch) return;
-  
+
   const consequencesSection = consequencesMatch[1];
   const lines = consequencesSection.split('\n').filter(line => line.trim().startsWith('-'));
-  
+
   for (const line of lines) {
     const match = line.trim().match(/^-\s*([^:]+):\s*(.+)$/);
     if (!match) continue;
-    
+
     const [, playerName, change] = match;
-    
+
     // Обработка изменений бункера
     if (playerName.toLowerCase() === 'бункер') {
       if (!game.bunkerResources) {
         game.bunkerResources = [];
       }
-      
-      if (change.toLowerCase().includes('минус') || 
-          change.toLowerCase().includes('-')) {
-        
+
+      if (change.toLowerCase().includes('минус') ||
+        change.toLowerCase().includes('-')) {
+
         let resourceName = null;
         let resourceAmount = 1;
-        
+
         const amountMatch = change.match(/(минус|-)\s*(\d+)/i);
         if (amountMatch) {
           resourceAmount = parseInt(amountMatch[2]);
         }
-        
+
         for (const item of GAME_DATA.characteristics.inventory) {
           if (change.toLowerCase().includes(item.toLowerCase())) {
             resourceName = item;
             break;
           }
         }
-        
+
         if (!resourceName) {
           console.log(`⚠️ Не удалось определить ресурс для списания: ${change}`);
           continue;
         }
-        
+
         let totalAvailable = 0;
         const resourceIndices = [];
-        
+
         game.bunkerResources.forEach((resource, index) => {
           if (resource.toLowerCase().includes(resourceName.toLowerCase())) {
             totalAvailable++;
             resourceIndices.push(index);
           }
         });
-        
+
         console.log(`📦 Для ресурса "${resourceName}" требуется ${resourceAmount}, доступно в бункере: ${totalAvailable}`);
-        
+
         if (totalAvailable >= resourceAmount) {
           let remainingToRemove = resourceAmount;
-          
+
           for (let i = resourceIndices.length - 1; i >= 0; i--) {
             if (remainingToRemove <= 0) break;
-            
+
             const index = resourceIndices[i];
             game.bunkerResources.splice(index, 1);
             remainingToRemove--;
@@ -2923,53 +2920,53 @@ function applyEventConsequences(eventText, game) {
           console.log(`⚠️ Недостаточно ресурсов "${resourceName}" в бункере. Пропускаем списание.`);
         }
       }
-      
-      else if (change.toLowerCase().includes('плюс') || 
-               change.toLowerCase().includes('+')) {
-        
+
+      else if (change.toLowerCase().includes('плюс') ||
+        change.toLowerCase().includes('+')) {
+
         let resourceName = null;
         let resourceAmount = 1;
-        
+
         const amountMatch = change.match(/(\+|плюс)\s*(\d+)/i);
         if (amountMatch) {
           resourceAmount = parseInt(amountMatch[2]);
         }
-        
+
         for (const item of GAME_DATA.characteristics.inventory) {
           if (change.toLowerCase().includes(item.toLowerCase())) {
             resourceName = item;
             break;
           }
         }
-        
+
         if (!resourceName) {
           console.log(`⚠️ Не удалось определить ресурс для добавления: ${change}`);
           continue;
         }
-        
+
         for (let i = 0; i < resourceAmount; i++) {
           game.bunkerResources.push(resourceName);
         }
-        
+
         console.log(`✅ Добавлено ${resourceAmount} x "${resourceName}" в ресурсы бункера`);
       }
-      
+
       continue;
     }
-    
+
     // Обработка изменений игроков
     const player = game.players.find(p => p.name === playerName);
     if (!player) continue;
-    
-    if (change.toLowerCase().includes('получает') || 
-        change.toLowerCase().includes('находит') ||
-        change.toLowerCase().includes('добавляется')) {
-      
+
+    if (change.toLowerCase().includes('получает') ||
+      change.toLowerCase().includes('находит') ||
+      change.toLowerCase().includes('добавляется')) {
+
       if (!player.characteristics.inventory.revealed) {
         console.log(`⚠️ Пропускаем добавление предмета для ${playerName} - инвентарь не раскрыт`);
         continue;
       }
-      
+
       for (const item of GAME_DATA.characteristics.inventory) {
         if (change.toLowerCase().includes(item.toLowerCase())) {
           const currentInv = player.characteristics.inventory.value;
@@ -2983,17 +2980,17 @@ function applyEventConsequences(eventText, game) {
         }
       }
     }
-    
+
     else if (change.toLowerCase().includes('теряет') ||
-             change.toLowerCase().includes('потерял') ||
-             change.toLowerCase().includes('пропадает') ||
-             change.toLowerCase().includes('ломается')) {
-      
+      change.toLowerCase().includes('потерял') ||
+      change.toLowerCase().includes('пропадает') ||
+      change.toLowerCase().includes('ломается')) {
+
       if (!player.characteristics.inventory.revealed) {
         console.log(`⚠️ Пропускаем удаление предмета для ${playerName} - инвентарь не раскрыт`);
         continue;
       }
-      
+
       let itemToRemove = null;
       for (const item of GAME_DATA.characteristics.inventory) {
         if (change.toLowerCase().includes(item.toLowerCase())) {
@@ -3001,13 +2998,13 @@ function applyEventConsequences(eventText, game) {
           break;
         }
       }
-      
+
       if (itemToRemove) {
         const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
-        
+
         if (items.includes(itemToRemove)) {
           const newItems = items.filter(i => i !== itemToRemove);
-          
+
           if (newItems.length === 0) {
             player.characteristics.inventory.value = '—';
           } else {
@@ -3019,27 +3016,27 @@ function applyEventConsequences(eventText, game) {
         }
       }
     }
-    
+
     else if (change.toLowerCase().includes('травма') ||
-             change.toLowerCase().includes('рана') ||
-             change.toLowerCase().includes('перелом') ||
-             change.toLowerCase().includes('вывих') ||
-             change.toLowerCase().includes('ушиб') ||
-             change.toLowerCase().includes('ожог') ||
-             change.toLowerCase().includes('обморожение') ||
-             change.toLowerCase().includes('болезнь')) {
-      
+      change.toLowerCase().includes('рана') ||
+      change.toLowerCase().includes('перелом') ||
+      change.toLowerCase().includes('вывих') ||
+      change.toLowerCase().includes('ушиб') ||
+      change.toLowerCase().includes('ожог') ||
+      change.toLowerCase().includes('обморожение') ||
+      change.toLowerCase().includes('болезнь')) {
+
       if (!player.characteristics.health.revealed) {
         console.log(`⚠️ Пропускаем изменение здоровья для ${playerName} - здоровье не раскрыто`);
         continue;
       }
-      
+
       const diseases = parseHealthValue(player.characteristics.health.value);
-      
+
       let severity = 'легкая';
       if (change.includes('тяжел')) severity = 'тяжелая';
       else if (change.includes('средн')) severity = 'средняя';
-      
+
       let diseaseName = 'Травма';
       const diseaseKeywords = {
         'перелом': 'Перелом',
@@ -3054,14 +3051,14 @@ function applyEventConsequences(eventText, game) {
         'ангина': 'Ангина',
         'отравление': 'Отравление'
       };
-      
+
       for (const [key, value] of Object.entries(diseaseKeywords)) {
         if (change.toLowerCase().includes(key)) {
           diseaseName = value;
           break;
         }
       }
-      
+
       diseases.push({ name: diseaseName, severity });
       player.characteristics.health.value = formatHealthValue(diseases);
       console.log(`✅ Добавлена травма/болезнь "${diseaseName}" игроку ${playerName}`);
@@ -3171,12 +3168,12 @@ app.post('/api/generate-event', async (req, res) => {
 
     // Генерируем событие с валидацией
     const validatedEvent = await generateValidatedEvent(game);
-    
+
     // 👇 Берем текст из свойства text
     const parts = validatedEvent.text.split(/\n\s*Последствия:/i);
     const eventText = parts[0].trim();
     let consequencesText = parts.length > 1 ? parts[1].trim() : '';
-    
+
     const event = {
       id: uuidv4(),
       text: eventText,
@@ -3197,10 +3194,10 @@ app.post('/api/generate-event', async (req, res) => {
     // Сохраняем изменения
     games.set(gameId, game);
     saveData();
-    
+
     // Отправляем обновление всем игрокам
     emitGameUpdateFixed(gameId);
-    
+
     // Отправляем событие
     io.to(gameId).emit('newEvent', event);
 
@@ -3502,13 +3499,13 @@ io.on('connection', (socket) => {
     if (characteristic === 'inventory' && game.bunkerResources) {
       const items = parseCharacteristicValue('inventory', player.characteristics.inventory.value);
       const allItems = [items.main, ...items.items].filter(i => i && i !== '—');
-      
+
       allItems.forEach(item => {
         if (!game.bunkerResources.includes(item)) {
           game.bunkerResources.push(item);
         }
       });
-      
+
       console.log(`🏦 Предметы игрока ${player.name} добавлены в ресурсы бункера`);
     }
 
