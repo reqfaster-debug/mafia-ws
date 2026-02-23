@@ -2088,18 +2088,18 @@ const GAME_DATA = {
 // Степени тяжести для здоровья
 const HEALTH_SEVERITIES = ['легкая', 'средняя', 'тяжелая', 'критическая'];
 
-// ============ ФУНКЦИИ ДЛЯ ПАРСИНГА ЗДОРОВЬЯ ============
 function parseHealthValue(healthString) {
   if (!healthString || healthString === 'Здоров') {
     return [];
   }
-
+  
   // Разделяем по запятой и обрабатываем каждую часть
   const parts = healthString.split(',').map(s => s.trim());
   const diseases = [];
-
+  
   for (const part of parts) {
     // Ищем формат "Болезнь (степень)"
+    // Регулярное выражение ищет название болезни и степень в скобках
     const match = part.match(/^(.+?)\s*\((\w+)\)$/);
     if (match) {
       diseases.push({
@@ -2107,14 +2107,18 @@ function parseHealthValue(healthString) {
         severity: match[2]
       });
     } else {
-      // Если нет скобок, добавляем с легкой степенью
-      diseases.push({
-        name: part,
-        severity: 'легкая'
-      });
+      // Если нет скобок, это может быть результат неправильного парсинга
+      // Пробуем извлечь болезнь из строки
+      const simpleMatch = part.match(/^([^\(]+)/);
+      if (simpleMatch) {
+        diseases.push({
+          name: simpleMatch[1].trim(),
+          severity: 'легкая'
+        });
+      }
     }
   }
-
+  
   return diseases;
 }
 
@@ -2122,15 +2126,7 @@ function formatHealthValue(diseases) {
   if (!diseases || diseases.length === 0) {
     return 'Здоров';
   }
-
-  return diseases.map(d => `${d.name} (${d.severity})`).join(', ');
-}
-
-function formatHealthValue(diseases) {
-  if (!diseases || diseases.length === 0) {
-    return 'Здоров';
-  }
-
+  
   return diseases.map(d => `${d.name} (${d.severity})`).join(', ');
 }
 // ========================================================
