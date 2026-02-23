@@ -2673,15 +2673,33 @@ function applyConsequencesFromFacts(game, facts, consequences) {
   
   for (const cons of consequences) {
     switch(cons.type) {
-      case 'add_disease':
-        const player = cons.target;
-        if (!player || !player.characteristics.health.revealed) continue;
-        
-        const diseases = parseHealthValue(player.characteristics.health.value);
-        diseases.push({ name: cons.value, severity: 'легкая' });
-        player.characteristics.health.value = formatHealthValue(diseases);
-        results.push(`- ${player.name}: ${cons.value} (легкая)<br>`);
-        break;
+case 'add_disease':
+  const player = cons.target;
+  if (!player || !player.characteristics.health.revealed) continue;
+  
+  // Получаем текущие болезни
+  const diseases = parseHealthValue(player.characteristics.health.value);
+  
+  // Проверяем, есть ли уже такая болезнь
+  const existingDisease = diseases.find(d => d.name === cons.value);
+  
+  if (existingDisease) {
+    // Если болезнь уже есть, просто обновляем степень тяжести
+    existingDisease.severity = cons.severity || 'легкая';
+    console.log(`🔄 Обновлена степень болезни "${cons.value}" у игрока ${player.name} на ${existingDisease.severity}`);
+  } else {
+    // Если болезни нет, добавляем новую
+    diseases.push({ 
+      name: cons.value, 
+      severity: cons.severity || 'легкая' 
+    });
+    console.log(`✅ Добавлена новая болезнь "${cons.value}" игроку ${player.name}`);
+  }
+  
+  // Форматируем обратно в строку
+  player.characteristics.health.value = formatHealthValue(diseases);
+  results.push(`- ${player.name}: ${cons.value} (${cons.severity || 'легкая'})<br>`);
+  break;
         
       case 'add_item':
         const target = cons.target === 'bunker' ? null : cons.target;
@@ -2747,9 +2765,24 @@ function applyConsequencesFromFacts(game, facts, consequences) {
 }
 // =======================================================
 
-// ============ ФУНКЦИЯ ДЛЯ ВЫЗОВА НЕЙРОСЕТИ ============
+
+// Функция для генерации истории из фактов
 async function generateStoryFromFacts(facts, template, game) {
   
+  // Собираем информацию о раскрытых характеристиках игроков
+  const playersContext = {};
+  game.players.forEach(player => {
+    const revealed = {};
+    Object.entries(player.characteristics).forEach(([key, char]) => {
+      if (char.revealed) {
+        revealed[key] = char.value;
+      }
+    });
+    if (Object.keys(revealed).length > 0) {
+      playersContext[player.name] = revealed;
+    }
+  });
+
   // Формируем описание фактов для нейросети
   let factsDescription = '';
   
@@ -2817,8 +2850,32 @@ async function generateStoryFromFacts(facts, template, game) {
 - Травма: ${facts.injury}`;
       break;
   }
-  
-  const prompt = `Ты генератор историй для игры "Бункер". На основе фактов напиши КОРОТКИЙ драматичный рассказ (4-5 предложений).
+
+  // Формируем контекст раскрытых характеристик
+  let contextText = '';
+  if (Object.keys(playersContext).length > 0) {
+    contextText = 'РАСКРЫТЫЕ ХАРАКТЕРИСТИКИ ИГРОКОВ (используй для атмосферы):\n';
+    for (const [playerName, chars] of Object.entries(playersContext)) {
+      contextText += `${playerName}: `;
+      const charStrings = [];
+      if (chars.profession) charStrings.push(`профессия ${chars.profession}`);
+      if (chars.trait) charStrings.push(`характер ${chars.trait}`);
+      if (chars.hobby) charStrings.push(`хобби ${chars.hobby}`);
+      if (chars.phobia) charStrings.push(`фобия ${chars.phobia}`);
+      if (chars.extra) charStrings.push(`особенность ${chars.extra}`);
+      contextText += charStrings.join(', ') + '\n';
+    }
+  }
+
+  const prompt = `Ты генератор историй для игры "Бункер". Напиши КОРОТКИЙ драматичный рассказ (4-5 предложений) на основе фактов.
+
+**ВАЖНЫЕ ПРАВИЛА:**
+1. Все события происходят СНАРУЖИ бункера, в окрестностях (в лесу, у реки, в полях, на развалинах, у дороги)
+2. События вызваны ВНЕШНИМИ факторами (погода, дикие животные, другие люди, случайные находки, несчастные случаи)
+3. Игроки НЕ СПЯТ и НЕ ЗАХОДЯТ в бункер - они находятся снаружи, занимаются делами (охота, сбор дров, разведка, поход за водой)
+4. Используй атмосферу из раскрытых характеристик игроков, если они есть
+
+${contextText}
 
 ${factsDescription}
 
