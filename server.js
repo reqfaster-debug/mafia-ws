@@ -207,18 +207,71 @@ if (!OPENROUTER_API_KEY) {
 
 // Модели для разных целей
 const STORY_MODELS = [
-  'google/gemini-2.0-flash-001',        // Gemini для генерации сюжета
-  'nex-agi/deepseek-v3.1-nex-n1:free',  // DeepSeek как запасной
+    'openai/gpt-4o-mini',
+  'google/gemini-2.0-flash-001',     
+  'nex-agi/deepseek-v3.1-nex-n1:free', 
 ];
 
-const VALIDATOR_MODELS = [
-  'openai/gpt-4o-mini',                  // ChatGPT для валидации
-  'mistralai/mistral-7b-instruct',       // Mistral как запасной
-];
 
-// Таймаут для каждой модели (20 секунд)
-const MODEL_TIMEOUT = 20000;
-// ================================================
+// Функция для вызова нейросети с таймаутом
+async function callModelWithTimeout(model, prompt, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 1,
+        max_tokens: 2000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://bunker-game-server.onrender.com',
+          'X-Title': 'Bunker Game'
+        },
+        signal: controller.signal
+      }
+    );
+
+    clearTimeout(timeoutId);
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+// Функция для инициализации ресурсов бункера
+function initializeBunkerResources(game) {
+  game.bunkerResources = [];
+
+  game.players.forEach(player => {
+    if (player.characteristics.inventory.revealed &&
+      player.characteristics.inventory.value &&
+      player.characteristics.inventory.value !== '—') {
+
+      const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
+      items.forEach(item => {
+        if (item && item !== '—') {
+          game.bunkerResources.push(item);
+        }
+      });
+    }
+  });
+
+  console.log(`🏦 Инициализированы ресурсы бункера: ${game.bunkerResources.length} предметов`);
+}
+
 
 // Массивы данных
 const GAME_DATA = {
@@ -2810,64 +2863,7 @@ app.get('/api/events/:gameId', (req, res) => {
 });
 
 
-// Функция для вызова нейросети с таймаутом
-async function callModelWithTimeout(model, prompt, timeoutMs = 20000) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 1,
-        max_tokens: 2000
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://bunker-game-server.onrender.com',
-          'X-Title': 'Bunker Game'
-        },
-        signal: controller.signal
-      }
-    );
-
-    clearTimeout(timeoutId);
-    return response.data.choices[0].message.content;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
-}
-
-// Функция для инициализации ресурсов бункера
-function initializeBunkerResources(game) {
-  game.bunkerResources = [];
-
-  game.players.forEach(player => {
-    if (player.characteristics.inventory.revealed &&
-      player.characteristics.inventory.value &&
-      player.characteristics.inventory.value !== '—') {
-
-      const items = player.characteristics.inventory.value.split(',').map(i => i.trim());
-      items.forEach(item => {
-        if (item && item !== '—') {
-          game.bunkerResources.push(item);
-        }
-      });
-    }
-  });
-
-  console.log(`🏦 Инициализированы ресурсы бункера: ${game.bunkerResources.length} предметов`);
-}
 
 
 
