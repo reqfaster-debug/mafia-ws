@@ -3042,57 +3042,22 @@ function applyEventConsequences(eventText, game) {
 
 
 // API маршруты
-app.post('/api/generate-event', async (req, res) => {
+app.post('/api/create-lobby', (req, res) => {
   try {
-    const { gameId } = req.body;
-    const game = games.get(gameId);
-    if (!game) {
-      return res.status(404).json({ error: 'Игра не найдена' });
-    }
+    const lobbyId = uuidv4().substring(0, 6).toUpperCase();
+    lobbies.set(lobbyId, {
+      id: lobbyId,
+      players: [],
+      creator: null,
+      created: Date.now()
+    });
 
-    console.log(`🎮 Генерация события для игры ${gameId}`);
-
-    // Генерируем событие с валидацией
-    const validatedEvent = await generateValidatedEvent(game);
-    
-    // 👇 Берем текст из свойства text
-    const parts = validatedEvent.text.split(/\n\s*Последствия:/i);
-    const eventText = parts[0].trim();
-    let consequencesText = parts.length > 1 ? parts[1].trim() : '';
-    
-    const event = {
-      id: uuidv4(),
-      text: eventText,
-      consequences: consequencesText,
-      timestamp: Date.now()
-    };
-
-    if (!game.events) game.events = [];
-    game.events.unshift(event);
-    if (game.events.length > 20) game.events = game.events.slice(0, 20);
-
-    // Применяем последствия к игре
-    if (consequencesText) {
-      const fullEventText = eventText + '\n\nПоследствия:\n' + consequencesText;
-      applyEventConsequences(fullEventText, game);
-    }
-
-    // Сохраняем изменения
-    games.set(gameId, game);
     saveData();
-    
-    // Отправляем обновление всем игрокам
-    emitGameUpdateFixed(gameId);
-    
-    // Отправляем событие
-    io.to(gameId).emit('newEvent', event);
-
-    console.log(`✅ Событие успешно добавлено в игру ${gameId}`);
-    res.json({ success: true, event });
-
+    console.log('Лобби создано:', lobbyId);
+    res.json({ lobbyId });
   } catch (error) {
-    console.error('❌ Ошибка генерации события:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Ошибка создания лобби:', error);
+    res.status(500).json({ error: 'Ошибка создания лобби' });
   }
 });
 
@@ -3178,7 +3143,8 @@ app.post('/api/generate-event', async (req, res) => {
     // Генерируем событие с валидацией
     const validatedEvent = await generateValidatedEvent(game);
     
-    const parts = validatedEvent.split(/\n\s*Последствия:/i);
+    // 👇 Берем текст из свойства text
+    const parts = validatedEvent.text.split(/\n\s*Последствия:/i);
     const eventText = parts[0].trim();
     let consequencesText = parts.length > 1 ? parts[1].trim() : '';
     
