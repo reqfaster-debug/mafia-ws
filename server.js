@@ -3535,6 +3535,75 @@ io.on('connection', (socket) => {
     console.log(`В игре ${gameId} права создателя переданы от ${initiator.name} к ${newCreator.name}`);
   });
 
+  
+  
+  
+  
+  
+  
+// ============ ОБНОВЛЕНИЕ КАТАСТРОФЫ ============
+socket.on('rerollDisaster', ({ gameId }) => {
+  const game = games.get(gameId);
+  if (!game) {
+    socket.emit('error', 'Игра не найдена');
+    return;
+  }
+
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
+    socket.emit('error', 'Только создатель может обновлять катастрофу');
+    return;
+  }
+
+  // Выбираем новую катастрофу
+  game.disaster = GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)];
+  games.set(gameId, game);
+
+  // Отправляем обновление всем в комнате
+  io.to(gameId).emit('gameUpdate', {
+    players: game.players,
+    creatorId: game.creator,
+    disaster: game.disaster,
+    bunker: game.bunker,
+    totalSlots: game.totalSlots,
+    bunkerResources: game.bunkerResources || []
+  });
+
+  console.log(`Создатель ${initiator.name} обновил катастрофу в игре ${gameId}`);
+});
+
+// ============ ОБНОВЛЕНИЕ БУНКЕРА ============
+socket.on('rerollBunker', ({ gameId }) => {
+  const game = games.get(gameId);
+  if (!game) {
+    socket.emit('error', 'Игра не найдена');
+    return;
+  }
+
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
+    socket.emit('error', 'Только создатель может обновлять бункер');
+    return;
+  }
+
+  // Выбираем новый бункер
+  game.bunker = GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)];
+  games.set(gameId, game);
+
+  io.to(gameId).emit('gameUpdate', {
+    players: game.players,
+    creatorId: game.creator,
+    disaster: game.disaster,
+    bunker: game.bunker,
+    totalSlots: game.totalSlots,
+    bunkerResources: game.bunkerResources || []
+  });
+
+  console.log(`Создатель ${initiator.name} обновил бункер в игре ${gameId}`);
+});
+  
+  
+  
   // ============ ОБРАБОТЧИКИ ДЛЯ ЗДОРОВЬЯ ============
   socket.on('changeHealth', ({ gameId, playerId, action, diseaseName, severity }) => {
     console.log('changeHealth called:', { gameId, playerId, action, diseaseName, severity });
