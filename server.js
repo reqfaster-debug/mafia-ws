@@ -296,7 +296,7 @@ if (!OPENROUTER_API_KEY) {
 // Модели для разных целей
 const STORY_MODELS = [
   'google/gemini-2.0-flash-001',
-  'nex-agi/deepseek-v3.1-nex-n1:free',  
+  'nex-agi/deepseek-v3.1-nex-n1:free',
   'openai/gpt-4o-mini',
 ];
 
@@ -1057,7 +1057,7 @@ const GAME_DATA = {
       'Сентиментальный',
       'Прагматичный',
       'Авантюрный',
-      'Домосед',   
+      'Домосед',
       'Одиночка',
 
       // СПЕЦИФИЧЕСКИЕ (20)
@@ -2879,7 +2879,7 @@ async function generateStoryFromFacts(facts, template, game) {
     }
   }
 
-const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (5-6 предложений) на основе фактов.
+  const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (5-6 предложений) на основе фактов.
 
 **КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА (НАРУШЕНИЕ НЕДОПУСТИМО):**
 
@@ -2990,8 +2990,8 @@ ${factsDescription}
 - Бункер: +2 месяца еды<br>
 
 Напиши историю, используя факты. Обязательно учитывай фобии и черты характера игроков, если они есть в фактах. Если фобия связана с событием - покажи ее влияние. Если черта характера яркая - пусть она проявится в реакции. Не добавляй новых фактов. Строго следуй формату болезней (с указанием тяжести в скобках) и еды (с указанием месяцев в скобках). **Все действия происходят только у входа в бункер. Игроки НИКУДА не отходят.**`;
- 
-// Пробуем разные модели
+
+  // Пробуем разные модели
   for (const model of STORY_MODELS) {
     try {
       const story = await callModelWithTimeout(model, prompt, 15000);
@@ -3377,6 +3377,46 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Случайная катастрофа
+  socket.on('randomizeDisaster', ({ gameId }) => {
+    const game = games.get(gameId);
+    if (!game) {
+      socket.emit('error', 'Игра не найдена');
+      return;
+    }
+    const initiator = game.players.find(p => p.socketId === socket.id);
+    if (!initiator || initiator.id !== game.creator) {
+      socket.emit('error', 'Только создатель может менять катастрофу');
+      return;
+    }
+    const newDisaster = GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)];
+    game.disaster = newDisaster;
+    games.set(gameId, game);
+    saveData();
+    io.to(gameId).emit('disasterUpdated', { disaster: newDisaster });
+    console.log(`Создатель ${initiator.name} изменил катастрофу (случайно) в игре ${gameId}`);
+  });
+
+  // Случайный бункер
+  socket.on('randomizeBunker', ({ gameId }) => {
+    const game = games.get(gameId);
+    if (!game) {
+      socket.emit('error', 'Игра не найдена');
+      return;
+    }
+    const initiator = game.players.find(p => p.socketId === socket.id);
+    if (!initiator || initiator.id !== game.creator) {
+      socket.emit('error', 'Только создатель может менять бункер');
+      return;
+    }
+    const newBunker = GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)];
+    game.bunker = newBunker;
+    games.set(gameId, game);
+    saveData();
+    io.to(gameId).emit('bunkerUpdated', { bunker: newBunker, totalSlots: game.totalSlots });
+    console.log(`Создатель ${initiator.name} изменил бункер (случайно) в игре ${gameId}`);
+  });
+
   socket.on('revealCharacteristic', ({ gameId, characteristic }) => {
     const game = games.get(gameId);
     if (!game) return;
@@ -3757,18 +3797,18 @@ io.on('connection', (socket) => {
 
 
 
-// Обновление катастрофы
-socket.on('updateDisaster', ({ gameId, disaster }) => {
+  // Обновление катастрофы
+  socket.on('updateDisaster', ({ gameId, disaster }) => {
     const game = games.get(gameId);
     if (!game) {
-        socket.emit('error', 'Игра не найдена');
-        return;
+      socket.emit('error', 'Игра не найдена');
+      return;
     }
 
     const initiator = game.players.find(p => p.socketId === socket.id);
     if (!initiator || initiator.id !== game.creator) {
-        socket.emit('error', 'Только создатель может изменять катастрофу');
-        return;
+      socket.emit('error', 'Только создатель может изменять катастрофу');
+      return;
     }
 
     game.disaster = disaster;
@@ -3777,20 +3817,20 @@ socket.on('updateDisaster', ({ gameId, disaster }) => {
 
     io.to(gameId).emit('disasterUpdated', { disaster });
     console.log(`Создатель ${initiator.name} обновил катастрофу в игре ${gameId}`);
-});
+  });
 
-// Обновление бункера
-socket.on('updateBunker', ({ gameId, bunker, totalSlots }) => {
+  // Обновление бункера
+  socket.on('updateBunker', ({ gameId, bunker, totalSlots }) => {
     const game = games.get(gameId);
     if (!game) {
-        socket.emit('error', 'Игра не найдена');
-        return;
+      socket.emit('error', 'Игра не найдена');
+      return;
     }
 
     const initiator = game.players.find(p => p.socketId === socket.id);
     if (!initiator || initiator.id !== game.creator) {
-        socket.emit('error', 'Только создатель может изменять бункер');
-        return;
+      socket.emit('error', 'Только создатель может изменять бункер');
+      return;
     }
 
     game.bunker = bunker;
@@ -3800,7 +3840,7 @@ socket.on('updateBunker', ({ gameId, bunker, totalSlots }) => {
 
     io.to(gameId).emit('bunkerUpdated', { bunker, totalSlots });
     console.log(`Создатель ${initiator.name} обновил бункер в игре ${gameId}`);
-});
+  });
 
 
   // ============ ОБРАБОТЧИКИ ДЛЯ ГОЛОСОВАНИЯ ============
