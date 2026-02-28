@@ -18,6 +18,8 @@ const corsOptions = {
 
     // Список разрешенных доменов
     const allowedOrigins = [
+      'http://o96894pc.beget.tech',
+      'https://o96894pc.beget.tech',
       'http://localhost',
       'http://localhost:3000',
       'http://127.0.0.1',
@@ -48,6 +50,8 @@ app.options('*', cors(corsOptions));
 const io = socketIo(server, {
   cors: {
     origin: [
+      'http://o96894pc.beget.tech',
+      'https://o96894pc.beget.tech',
       "http://a1230559.xsph.ru",
       "https://a1230559.xsph.ru",
       "http://calm-dolphin-0396cf.netlify.app",
@@ -296,7 +300,7 @@ if (!OPENROUTER_API_KEY) {
 // Модели для разных целей
 const STORY_MODELS = [
   'google/gemini-2.0-flash-001',
-  'nex-agi/deepseek-v3.1-nex-n1:free',  
+  'nex-agi/deepseek-v3.1-nex-n1:free',
   'openai/gpt-4o-mini',
 ];
 
@@ -1058,7 +1062,6 @@ const GAME_DATA = {
       'Прагматичный',
       'Авантюрный',
       'Домосед',
-      'Путешественник',
       'Одиночка',
 
       // СПЕЦИФИЧЕСКИЕ (20)
@@ -2880,7 +2883,7 @@ async function generateStoryFromFacts(facts, template, game) {
     }
   }
 
-const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (5-6 предложений) на основе фактов.
+  const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (5-6 предложений) на основе фактов.
 
 **КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА (НАРУШЕНИЕ НЕДОПУСТИМО):**
 
@@ -2991,8 +2994,8 @@ ${factsDescription}
 - Бункер: +2 месяца еды<br>
 
 Напиши историю, используя факты. Обязательно учитывай фобии и черты характера игроков, если они есть в фактах. Если фобия связана с событием - покажи ее влияние. Если черта характера яркая - пусть она проявится в реакции. Не добавляй новых фактов. Строго следуй формату болезней (с указанием тяжести в скобках) и еды (с указанием месяцев в скобках). **Все действия происходят только у входа в бункер. Игроки НИКУДА не отходят.**`;
- 
-// Пробуем разные модели
+
+  // Пробуем разные модели
   for (const model of STORY_MODELS) {
     try {
       const story = await callModelWithTimeout(model, prompt, 15000);
