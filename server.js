@@ -2230,6 +2230,50 @@ function extractHealthName(healthString) {
 }
 // ====================================================
 
+
+
+
+// Функция для изменения степени тяжести болезни
+function changeDiseaseSeverity(healthString, increase = true) {
+    const diseases = parseHealthValue(healthString);
+    if (diseases.length === 0) return healthString;
+    
+    const severities = ['легкая', 'средняя', 'тяжелая', 'критическая'];
+    
+    // Изменяем первую болезнь (можно изменить логику)
+    const disease = diseases[0];
+    const currentIndex = severities.indexOf(disease.severity);
+    
+    if (increase) {
+        // Ухудшение
+        if (currentIndex < severities.length - 1) {
+            disease.severity = severities[currentIndex + 1];
+        } else {
+            // Если уже критическая - возвращаем 'DEATH' как сигнал к смерти
+            return 'DEATH';
+        }
+    } else {
+        // Улучшение (лечение)
+        if (currentIndex > 0) {
+            disease.severity = severities[currentIndex - 1];
+        } else {
+            // Если уже легкая - полностью вылечиваем
+            return 'Здоров';
+        }
+    }
+    
+    return formatHealthValue(diseases);
+}
+
+
+
+
+
+
+
+
+
+
 // ============ НОВЫЕ ФУНКЦИИ ДЛЯ ХАРАКТЕРИСТИК ============
 // ============ ФУНКЦИЯ ДЛЯ ХАРАКТЕРИСТИК (ПОЛНАЯ ЗАЩИТА ОТ ДУБЛИКАТОВ) ============
 function getRandomValue(charKey, player, excludeAllOthers = true) {
@@ -4253,6 +4297,62 @@ io.on('connection', (socket) => {
     console.log(`Создатель изменил характеристику ${characteristic} игрока ${targetPlayer.name}`);
   });
 
+
+
+// Функция для извлечения стажа из строки профессии
+function extractExperienceFromProfession(professionString) {
+    if (!professionString) return 0;
+    
+    // Ищем паттерн "стаж X лет"
+    const match = professionString.match(/стаж\s+(\d+)/i);
+    if (match && match[1]) {
+        return parseInt(match[1]);
+    }
+    return 0;
+}
+
+// Функция для получения шанса лечения по стажу
+function getHealChance(experience) {
+    if (experience >= 25 && experience <= 30) return 100;
+    if (experience >= 20 && experience <= 24) return 90;
+    if (experience >= 15 && experience <= 19) return 80;
+    if (experience >= 10 && experience <= 14) return 70;
+    if (experience >= 5 && experience <= 9) return 65;
+    if (experience >= 1 && experience <= 4) return 55;
+    return 50; // на всякий случай
+}
+
+// Функция для изменения степени тяжести болезни
+function changeDiseaseSeverity(healthString, increase = true) {
+    const diseases = parseHealthValue(healthString);
+    if (diseases.length === 0) return healthString;
+    
+    const severities = ['легкая', 'средняя', 'тяжелая', 'критическая'];
+    
+    // Изменяем первую болезнь (можно изменить логику)
+    const disease = diseases[0];
+    const currentIndex = severities.indexOf(disease.severity);
+    
+    if (increase) {
+        // Ухудшение
+        if (currentIndex < severities.length - 1) {
+            disease.severity = severities[currentIndex + 1];
+        } else {
+            // Если уже критическая - возвращаем 'DEATH' как сигнал к смерти
+            return 'DEATH';
+        }
+    } else {
+        // Улучшение (лечение)
+        if (currentIndex > 0) {
+            disease.severity = severities[currentIndex - 1];
+        } else {
+            // Если уже легкая - полностью вылечиваем
+            return 'Здоров';
+        }
+    }
+    
+    return formatHealthValue(diseases);
+}
 
 
 
