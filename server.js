@@ -2233,26 +2233,54 @@ function extractHealthName(healthString) {
 
 
 
-// Функция для изменения степени тяжести болезни на указанное количество шагов
 function adjustDiseaseSeverity(healthString, delta) {
-  const diseases = parseHealthValue(healthString);
-  if (diseases.length === 0) return healthString;
+    console.log(`[adjust] Вход: healthString="${healthString}", delta=${delta}`);
 
-  const severities = ['легкая', 'средняя', 'тяжелая', 'критическая'];
-  // Лечим первую болезнь (можно доработать)
-  const disease = diseases[0];
-  const currentIndex = severities.indexOf(disease.severity);
+    const diseases = parseHealthValue(healthString);
+    if (diseases.length === 0) {
+        console.log('[adjust] Болезней нет, возвращаем исходное');
+        return healthString;
+    }
 
-  let newIndex = currentIndex + delta;
+    const severities = ['легкая', 'средняя', 'тяжелая', 'критическая'];
+    const disease = diseases[0]; // лечим первую болезнь
+    const currentSeverity = disease.severity;
+    const currentIndex = severities.indexOf(currentSeverity);
 
-  if (newIndex < 0) {
-    return 'Здоров';
-  } else if (newIndex >= severities.length) {
-    return 'DEATH';
-  } else {
+    console.log(`[adjust] Текущая степень: "${currentSeverity}", индекс: ${currentIndex}`);
+
+    // Если степень не найдена в списке – возможно, она хранится без скобок (только название)
+    if (currentIndex === -1) {
+        console.log('[adjust] Степень не распознана! Принудительно устанавливаем "легкая"');
+        disease.severity = 'легкая';
+        // Пересчитываем индекс
+        const newCurrentIndex = 0;
+        let newIndex = newCurrentIndex + delta;
+        console.log(`[adjust] Новый индекс после исправления: ${newIndex}`);
+        if (newIndex < 0) return 'Здоров';
+        if (newIndex >= severities.length) return 'DEATH';
+        disease.severity = severities[newIndex];
+        const result = formatHealthValue(diseases);
+        console.log(`[adjust] Результат после исправления: ${result}`);
+        return result;
+    }
+
+    let newIndex = currentIndex + delta;
+    console.log(`[adjust] Новый индекс: ${newIndex}`);
+
+    if (newIndex < 0) {
+        console.log('[adjust] Индекс < 0 → полное излечение');
+        return 'Здоров';
+    }
+    if (newIndex >= severities.length) {
+        console.log('[adjust] Индекс >= длины → смерть');
+        return 'DEATH';
+    }
+
     disease.severity = severities[newIndex];
-    return formatHealthValue(diseases);
-  }
+    const result = formatHealthValue(diseases);
+    console.log(`[adjust] Новая степень: ${disease.severity}, результат: ${result}`);
+    return result;
 }
 
 
