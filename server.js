@@ -4239,38 +4239,45 @@ socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
             break;
         }
     }
-    if (!selectedOutcome) {
-        // если сумма шансов меньше 100 (бывает), то оставшееся - ничего не происходит? Но у нас суммы 100.
-        selectedOutcome = outcomes[outcomes.length-1]; // запасной
-    }
+// ... внутри обработчика attemptHeal ...
 
-    const currentHealth = targetPlayer.characteristics.health.value;
-    const isCritical = diseases.some(d => d.severity === 'критическая');
-    let newHealth;
-    let resultMessage = '';
-    let died = false;
-
-    if (selectedOutcome.name === 'full') {
-        newHealth = 'Здоров';
+if (selectedOutcome.name === 'full') {
+    newHealth = 'Здоров';
+    resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
+} else {
+    const delta = selectedOutcome.delta;
+    // Определяем текущую степень до лечения (первая болезнь)
+    const currentSeverity = diseases[0]?.severity;
+    newHealth = adjustDiseaseSeverity(currentHealth, delta);
+    
+    if (newHealth === 'DEATH') {
+        died = true;
+        targetPlayer.status = 'dead';
+        targetPlayer.statusMessage = 'умер при лечении';
+        resultMessage = `💀 ${targetPlayer.name} не пережил лечение! (Стаж ${exp} лет)`;
+    } else if (newHealth === 'Здоров') {
+        // Если после применения дельты стало здорово — это полное излечение
         resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
     } else {
-        // Применяем delta
-        const delta = selectedOutcome.delta;
-        newHealth = adjustDiseaseSeverity(currentHealth, delta);
-        if (newHealth === 'DEATH') {
-            died = true;
-            targetPlayer.status = 'dead';
-            targetPlayer.statusMessage = 'умер при лечении';
-            resultMessage = `💀 ${targetPlayer.name} не пережил лечение! (Стаж ${exp} лет)`;
-        } else {
-            if (delta < 0) {
-                if (delta === -2) resultMessage = `✅ Снижение на 2 степени! (Стаж ${exp} лет)`;
-                else if (delta === -1) resultMessage = `✅ Снижение на 1 степень! (Стаж ${exp} лет)`;
-            } else {
-                resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
+        // Иначе проверяем, изменилась ли степень
+        const newDiseases = parseHealthValue(newHealth);
+        const newSeverity = newDiseases[0]?.severity;
+        if (delta < 0) {
+            if (delta === -2) {
+                resultMessage = `✅ Снижение на 2 степени! (Стаж ${exp} лет)`;
+            } else if (delta === -1) {
+                if (newSeverity && newSeverity !== currentSeverity) {
+                    resultMessage = `✅ Снижение на 1 степень! (Стаж ${exp} лет)`;
+                } else {
+                    // Если степень не изменилась (например, была легкая и стала здоровой)
+                    resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
+                }
             }
+        } else { // delta > 0
+            resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
         }
     }
+}
 
     if (!died) {
         targetPlayer.characteristics.health.value = newHealth;
