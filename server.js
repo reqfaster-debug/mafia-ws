@@ -2455,8 +2455,72 @@ const LocationRegistry = [
 ];
 
 const ThreatRegistry = [
-  'бродячие собаки', 'мародеры', 'мутанты', 'бандиты', 'одичавшие псы',
-  'крысы', 'кабаны', 'медведь', 'сектанты', 'радиация'
+ // Животные (оставляем)
+  'бродячие собаки', 'одичавшие псы', 'крысы', 'кабаны', 'медведь', 'волки', 'стая шакалов',
+  
+  // Люди-одиночки
+  'мародёр-одиночка', 'сумасшедший бродяга', 'отчаявшийся выживальщик', 'беглый каторжник',
+  'одинокий сталкер', 'дезертир', 'бомж с ломом', 'пьяный охотник', 'фанатик-одиночка',
+  
+  // Группы людей
+  'мародёры', 'бандиты', 'сектанты', 'каннибалы', 'рабы', 'беглые каторжники',
+  'вооружённая группа', 'рейдеры', 'грабители', 'налетчики', 'шайка воров',
+  'банда байкеров', 'дезертиры', 'фанатики', 'секта жнецов', 'культисты', 'чернокнижники',
+  
+  // Враждебные фракции
+  'соседняя группировка', 'конкуренты за ресурсы', 'чужаки', 'незнакомцы с оружием',
+  'вооружённые до зубов люди', 'люди в защитных костюмах', 'заражённые безумцы',
+  
+  // Психопаты
+  'психопат с ножом', 'безумец', 'человек с топором', 'маньяк', 'убийца', 'садист',
+  'бывший палач', 'живодёр', 'каннибал-одиночка',
+  
+  // Специфические типажи
+  'бывший военный', 'наёмник', 'киллер', 'снайпер', 'поджигатель', 'пироман',
+  'работорговец', 'торговец людьми', 'коллектор', 'вышибала', 'головорез',
+  
+  // Группы по профессиям
+  'бывшие полицейские', 'зэки', 'бывшие охранники', 'вахтовики', 'геологи',
+  'шахтёры с динамитом', 'лесники с ружьями', 'охотники', 'браконьеры',
+  
+  // Дополнительные
+  'пьяная компания', 'наркоманы', 'боевики', 'террористы',
+  'диверсанты', 'разведчики враждебной группы',
+  'радиация', // оставляем природную угрозу
+
+ // Торговцы и обмен
+  'странствующий торговец', 'меняла', 'человек с рюкзаком товаров', 'бродячий аптекарь',
+  'торговец оружием', 'скупщик металлолома', 'человек, предлагающий обмен',
+  
+  // Медики и помощь
+  'странствующий врач', 'фельдшер с аптечкой', 'медсестра', 'знахарь', 'целитель',
+  'человек с лекарствами', 'ветеринар', 'костоправ',
+  
+  // Умельцы и специалисты
+  'бродячий механик', 'инженер с инструментами', 'электрик', 'сварщик', 'оружейник',
+  'сапёр', 'взрывник', 'слесарь', 'плотник', 'строитель', 
+  
+  // Информаторы и сталкеры
+'картограф', 'человек с картами', 'информатор', 'старик-знахарь',
+  'местный житель', 'беженец', 'выживший из соседнего бункера',
+  
+  // Одиночки с добрыми намерениями
+  'путник с провизией', 'охотник, делящийся добычей', 'рыбак с уловом',
+  'старушка с семенами', 'женщина с детьми', 'семья выживших',
+  
+  
+  // Религиозные и философские (нейтральные)
+  'странствующий монах', 'проповедник', 'философ', 'отшельник', 'пустынник', 'группа хоббихорсеров', 'группа хоббихорсеров', 'группа хоббихорсеров',
+  
+  // Дети и беззащитные (могут быть как положительными, так и бременем)
+  'потерявшийся ребёнок', 'подросток-сирота', 'пожилая пара', 'инвалид',
+  
+  // Находки и случайные бонусы (не люди, но можно оставить для разнообразия)
+  'заброшенный схрон', 'военный склад', 'медицинский чемоданчик', 'ящик с провизией', 'ключ от сейфа', 
+  'ключ от сейфа',   'ключ от сейфа',   'ключ от сейфа', 
+
+
+
 ];
 
 const InjuryRegistry = [
@@ -2487,9 +2551,188 @@ const InjuryRegistry = [
    'Ринит', 'Фарингит', 'Ларингит', 'Тонзиллит', 'Аденоиды', 'Тугоухость', 'Глухота', 'Потеря голоса', 'Радиационное поражение', 
    'Лучевая болезнь', 'Отравление', 'Интоксикация', 'Сепсис', 'Заражение крови', 'Гангрена', 'Некроз', 'Фимоз', 'Парафимоз', 'Водянка', 'Асцит', 'Подагра', 'Ревматизм',
 ];
+
+
+const PhobiaRegistry = [
+   // Фобии, связанные с животными (10)
+      'Арахнофобия (боязнь пауков)',
+      'Кинофобия (боязнь собак)',
+      'Айлурофобия (боязнь кошек)',
+      'Офидиофобия (боязнь змей)',
+      'Мусофобия (боязнь мышей)',
+      'Энтомофобия (боязнь насекомых)',
+      'Апифобия (боязнь пчел)',
+      'Орнитофобия (боязнь птиц)',
+
+
+      // Фобии, связанные с природой и стихиями (10)
+      'Акрофобия (боязнь высоты)',
+      'Клаустрофобия (боязнь замкнутых пространств)',
+      'Агорафобия (боязнь открытых пространств)',
+      'Бронтофобия (боязнь грома)',
+      'Астрапофобия (боязнь молний)',
+      'Гидрофобия (боязнь воды)',
+      'Пирафобия (боязнь огня)',
+      'Никтофобия (боязнь темноты)',
+      'Анемофобия (боязнь ветра)',
+      'Криофобия (боязнь холода)',
+
+      // Фобии, связанные с людьми и социумом (12)    
+      'Демофобия (боязнь толпы)',
+      'Социофобия (боязнь общества)',
+      'Аутофобия (боязнь одиночества)',
+      'Катагелофобия (боязнь насмешек)',
+      'Скоптофобия (боязнь пристального взгляда)',
+      'Эрейтофобия (боязнь покраснеть)',
+      'Геронтофобия (боязнь стариков)',
+      'Педиофобия (боязнь детей)',
+      'Ксенофобия (боязнь чужаков)',
+      'Фобофобия (боязнь страха)',
+      'Энозофобия (боязнь осуждения)',
+
+      // Фобии, связанные с болезнями и медициной (12)
+      'Нозокомефобия (боязнь больниц)',
+      'Ятрофобия (боязнь врачей)',
+      'Гематофобия (боязнь крови)',
+      'Травматофобия (боязнь травм)',
+      'Алгофобия (боязнь боли)',
+      'Кардиофобия (боязнь сердечного приступа)',
+      'Канцерофобия (боязнь рака)',
+      'Мизофобия (боязнь грязи)',
+      'Гермофобия (боязнь микробов)',
+      'Нозофобия (боязнь заболеть)',
+      'Фармакофобия (боязнь лекарств)',
+      'Токсофобия (боязнь отравления)',
+
+      // Фобии, связанные с едой и телесными функциями (10)
+      'Цибофобия (боязнь приготовленной пищи)',
+      'Эметофобия (боязнь рвоты)',
+      'Копрофобия (боязнь фекалий)',
+      'Урофобия (боязнь мочи)',
+      'Галофобия (боязнь говорить)',
+      'Одинофагия (боязнь глотать)',
+      'Пнигофобия (боязнь подавиться)',
+
+
+      // Фобии, связанные с предметами и ситуациями (12)
+      'Айхмофобия (боязнь острых предметов)',
+      'Баллистофобия (боязнь оружия)',
+      'Хоплофобия (боязнь огнестрельного оружия)',
+      'Амаксофобия (боязнь автомобилей)',
+      'Авиафобия (боязнь полетов)',
+      'Клептофобия (боязнь воров)',
+      'Охлофобия (боязнь толпы)',
+      'Рипофобия (боязнь грязи)',
+      'Папирофобия (боязнь бумаги)',
+      'Гефирофобия (боязнь мостов)',
+      'Крематофобия (боязнь денег)',
+
+      // Фобии, связанные с психологическими состояниями (10)
+      'Атаксиофобия (боязнь беспорядка)',
+      'Децидофобия (боязнь принимать решения)',
+      'Гипенгиофобия (боязнь ответственности)',
+      'Кайрофобия (боязнь новых ситуаций)',
+      'Метрофобия (боязнь поэзии)',
+      'Гнозиофобия (боязнь знаний)',
+      'Софиофобия (боязнь учиться)',
+      'Эпистемофобия (боязнь знаний)',
+      'Логофобия (боязнь слов)',
+      'Ателофобия (боязнь несовершенства)',
+
+      // Фобии, связанные с паранормальным (8)
+      'Фазмофобия (боязнь призраков)',
+      'Ликантропофобия (боязнь оборотней)',
+      'Демонофобия (боязнь демонов)',
+      'Гатофобия (боязнь ведьм)',
+      'Психрофобия (боязнь холода)',
+      'Небулофобия (боязнь тумана)',
+      'Скелетофобия (боязнь скелетов)',
+      'Тафофобия (боязнь быть похороненным заживо)',
+
+      // СЕКСУАЛЬНЫЕ ФОБИИ (15)
+      'Аграфобия (боязнь сексуальных домогательств)',
+      'Контрелтофобия (боязнь стать жертвой домогательств)',
+      'Агонофобия (боязнь быть изнасилованным)',
+      'Генофобия (боязнь полового акта)',
+      'Коитофобия (страх полового акта)',
+      'Эротофобия (боязнь полового акта)',
+      'Миксеофобия (боязнь обнажаться)',
+      'Гимнофобия (боязнь наготы)',
+      'Андрофобия (боязнь мужчин)',
+      'Гинофобия (боязнь женщин)',
+      'Гинекофобия (боязнь женщин)',
+      'Гетерофобия (боязнь противоположного пола)',
+      'Филофобия (боязнь влюбленности)',
+      'Гамофобия (боязнь брака)',
+      'Партенофобия (боязнь девственниц)',
+
+      // ФОБИИ ПОЛОВЫХ ОРГАНОВ (8)
+      'Итифаллофобия (боязнь эрегированного мужского органа)',
+      'Фаллофобия (боязнь мужского полового органа)',
+      'Вагинофобия (боязнь женских половых органов)',
+      'Медомалакуфобия (боязнь потери эрекции)',
+      'Онейрогмофобия (боязнь ночной эякуляции)',
+      'Примейзодофобия (боязнь потерять девственность)',
+      'Парафобия (боязнь собственных фетишей)',
+      'Онанофобия (боязнь последствий мастурбации)',
+
+      // ФОБИИ ПОСЛЕДСТВИЙ СЕКСА (7)
+      'Гравидофобия (боязнь беременности)',
+      'Токофобия (боязнь родов)',
+      'Венерофобия (боязнь заразиться венерическими болезнями)',
+      'Спидофобия (боязнь заразиться ВИЧ)',
+      'Сифилософобия (боязнь заразиться сифилисом)',
+      'Нозофобия (боязнь болезней)',
+      'Аматофобия (боязнь пыли)',
+
+      // ФОБИИ ИНТИМНОСТИ (8)
+      'Гаптофобия (боязнь прикосновений)',
+      'Филемафобия (боязнь поцелуев)',
+      'Гаптефобия (боязнь касаний)',
+      'Бромидрофобия (боязнь запаха тела)',
+      'Осмофобия (боязнь запахов тела)',
+      'Аутомизофобия (боязнь плохо пахнуть)',
+      'Каунофобия (боязнь быть привлекательным)',
+      'Калигинефобия (боязнь красивых женщин)',
+
+      // ДОПОЛНИТЕЛЬНЫЕ ПОШЛЫЕ ФОБИИ (8)
+      'Экзаудоризм (боязнь быть подслушанным в интимный момент)',
+      'Анабозифобия (боязнь быть застигнутым в интимный момент)',
+      'Фроттефобия (боязнь тереться о других в людных местах)',
+      'Диспсихофобия (боязнь сойти с ума от желаний)',
+      'Синтелофобия (боязнь обнажаться перед женщинами)',
+      'Гимнофобия (боязнь раздеваться)',
+      'Миксофобия (боязнь половых контактов из-за стыда)',
+
+      // Пост-апокалиптические фобии (10)
+      'Некрофобия (боязнь трупов)',
+      'Танатофобия (боязнь смерти)',
+      'Кенофобия (боязнь пустоты)',
+      'Топофобия (боязнь определенных мест)',
+      'Атазагорафобия (боязнь забыть важное)',
+      'Дромофобия (боязнь переходить улицу)',
+      'Эргофобия (боязнь работы)',
+      'Сомнифобия (боязнь сна)',
+      'Гипнофобия (боязнь заснуть)',
+      'Эозофобия (боязнь рассвета)',
+
+      // Дополнительные фобии (10)
+      'Трихофобия (боязнь волос)',
+      'Онихофобия (боязнь ногтей)',
+      'Одонтофобия (боязнь зубов)',
+      'Эйсоптрофобия (боязнь зеркал)',
+      'Погонофобия (боязнь бороды)',
+      'Аблютофобия (боязнь купания)',
+      'Хроматофобия (боязнь цветов)',
+      'Панфобия (боязнь всего)',
+      'Уранофобия (боязнь рая)',
+      'Стаурологическая фобия (боязнь распятия)',
+      'Ригмофобия (боязнь трещин)',
+      'Катагелиофобия (боязнь обрушения зданий)',
+];
 // =======================================================
 
-// ============ ШАБЛОНЫ ФАКТОВ (НЕ ТЕКСТА!) ============
+// ============ ШАБЛОНЫ ФАКТОВ (С ШАНСАМИ НА ФОБИИ) ============
 const EventTemplates = [
   {
     id: 'attack',
@@ -2501,7 +2744,8 @@ const EventTemplates = [
       { type: 'injury', description: 'травма' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'add_disease', target: facts.target, value: facts.injury },
+      { type: 'maybe_add_disease', target: facts.target, value: facts.injury, chance: 0.5 },
+      { type: 'maybe_add_phobia', target: facts.target, chance: 0.4 }, // 40% шанс на фобию
       { type: 'maybe_remove_item', target: facts.target, category: 'food', chance: 0.3 }
     ])
   },
@@ -2514,7 +2758,7 @@ const EventTemplates = [
       { type: 'location', description: 'где нашел' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'add_item', target: facts.hero, value: facts.item }
+      { type: 'maybe_add_item', target: facts.hero, value: facts.item, chance: 0.7 }
     ])
   },
   {
@@ -2530,9 +2774,10 @@ const EventTemplates = [
       { type: 'injured', description: 'пострадавший' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'add_disease', target: facts.injured, value: facts.injury },
-      { type: 'add_item', target: facts.hero, value: facts.item1 },
-      { type: 'add_item', target: 'bunker', value: facts.item2 }
+      { type: 'maybe_add_disease', target: facts.injured, value: facts.injury, chance: 0.5 },
+      { type: 'maybe_add_phobia', target: facts.injured, chance: 0.4 }, // 40% шанс на фобию для пострадавшего
+      { type: 'maybe_add_item', target: facts.hero, value: facts.item1, chance: 0.7 },
+      { type: 'maybe_add_item', target: 'bunker', value: facts.item2, chance: 0.7 }
     ])
   },
   {
@@ -2544,7 +2789,7 @@ const EventTemplates = [
       { type: 'activity', description: 'причина' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'remove_item', target: facts.hero, value: facts.item }
+      { type: 'maybe_remove_item', target: facts.hero, value: facts.item, chance: 0.4 }
     ])
   },
   {
@@ -2556,7 +2801,8 @@ const EventTemplates = [
       { type: 'injury', description: 'травма' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'add_disease', target: facts.hero, value: facts.injury }
+      { type: 'maybe_add_disease', target: facts.hero, value: facts.injury, chance: 0.5 },
+      { type: 'maybe_add_phobia', target: facts.hero, chance: 0.4 } // 40% шанс на фобию
     ])
   },
   {
@@ -2568,7 +2814,8 @@ const EventTemplates = [
       { type: 'item', description: 'что украли' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'remove_item', target: facts.target, value: facts.item }
+      { type: 'maybe_remove_item', target: facts.target, value: facts.item, chance: 0.4 },
+      { type: 'maybe_add_phobia', target: facts.target, chance: 0.4 } // 40% шанс на фобию
     ])
   },
   {
@@ -2581,8 +2828,8 @@ const EventTemplates = [
       { type: 'item2', description: 'вторая находка' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'add_item', target: facts.hero, value: facts.item1 },
-      { type: 'add_item', target: 'bunker', value: facts.item2 }
+      { type: 'maybe_add_item', target: facts.hero, value: facts.item1, chance: 0.7 },
+      { type: 'maybe_add_item', target: 'bunker', value: facts.item2, chance: 0.7 }
     ])
   },
   {
@@ -2595,8 +2842,9 @@ const EventTemplates = [
       { type: 'injury', description: 'травма' }
     ],
     possibleConsequences: (facts) => ([
-      { type: 'add_disease', target: facts.hero, value: facts.injury },
-      { type: 'add_item', target: 'bunker', value: facts.item }
+      { type: 'maybe_add_disease', target: facts.hero, value: facts.injury, chance: 0.5 },
+      { type: 'maybe_add_phobia', target: facts.hero, chance: 0.4 }, // 40% шанс на фобию
+      { type: 'maybe_add_item', target: 'bunker', value: facts.item, chance: 0.7 }
     ])
   }
 ];
@@ -2768,12 +3016,24 @@ function generateEventFacts(game) {
 // =======================================================
 
 // ============ ФУНКЦИЯ ПРИМЕНЕНИЯ ПОСЛЕДСТВИЙ ============
+// ============ ФУНКЦИЯ ПРИМЕНЕНИЯ ПОСЛЕДСТВИЙ (С ШАНСАМИ И ФОБИЯМИ) ============
 function applyConsequencesFromFacts(game, facts, consequences) {
   const results = [];
 
   for (const cons of consequences) {
     switch (cons.type) {
+      // ===== БОЛЕЗНИ =====
       case 'add_disease':
+      case 'maybe_add_disease':
+        // Проверяем шанс
+        if (cons.type === 'maybe_add_disease' && cons.chance !== undefined) {
+          if (Math.random() >= cons.chance) {
+            console.log(`❌ Шанс ${cons.chance*100}% не сработал для болезни ${cons.value}`);
+            continue;
+          }
+          console.log(`✅ Шанс ${cons.chance*100}% сработал для болезни ${cons.value}`);
+        }
+
         const player = cons.target;
         if (!player || !player.characteristics.health.revealed) continue;
 
@@ -2808,7 +3068,39 @@ function applyConsequencesFromFacts(game, facts, consequences) {
         results.push(`- ${player.name}: ${cons.value} (${randomSeverity})<br>`);
         break;
 
+      // ===== ФОБИИ (НОВОЕ) =====
+      case 'maybe_add_phobia':
+        // Проверяем шанс
+        if (cons.chance !== undefined && Math.random() >= cons.chance) {
+          console.log(`❌ Шанс ${cons.chance*100}% не сработал для фобии`);
+          continue;
+        }
+        
+        const phobiaPlayer = cons.target;
+        if (!phobiaPlayer) continue;
+        
+        // Выбираем случайную фобию из реестра
+        const randomPhobia = PhobiaRegistry[Math.floor(Math.random() * PhobiaRegistry.length)];
+        
+        // Устанавливаем фобию (заменяем существующую)
+        phobiaPlayer.characteristics.phobia.value = randomPhobia;
+        
+        results.push(`- ${phobiaPlayer.name}: приобретена фобия ${randomPhobia}<br>`);
+        console.log(`✅ Добавлена фобия "${randomPhobia}" игроку ${phobiaPlayer.name}`);
+        break;
+
+      // ===== ПРЕДМЕТЫ =====
       case 'add_item':
+      case 'maybe_add_item':
+        // Проверяем шанс
+        if (cons.type === 'maybe_add_item' && cons.chance !== undefined) {
+          if (Math.random() >= cons.chance) {
+            console.log(`❌ Шанс ${cons.chance*100}% не сработал для предмета ${cons.value}`);
+            continue;
+          }
+          console.log(`✅ Шанс ${cons.chance*100}% сработал для предмета ${cons.value}`);
+        }
+
         const target = cons.target === 'bunker' ? null : cons.target;
         if (target && !target.characteristics.inventory.revealed) continue;
 
@@ -2827,42 +3119,54 @@ function applyConsequencesFromFacts(game, facts, consequences) {
         }
         break;
 
+      // ===== УДАЛЕНИЕ ПРЕДМЕТОВ =====
       case 'remove_item':
-        const victim = cons.target;
-        if (!victim || !victim.characteristics.inventory.revealed) continue;
-
-        const items = victim.characteristics.inventory.value.split(',').map(i => i.trim());
-        const newItems = items.filter(i => !i.includes(cons.value));
-
-        if (newItems.length === 0) {
-          victim.characteristics.inventory.value = '—';
-        } else {
-          victim.characteristics.inventory.value = newItems.join(', ');
-        }
-        results.push(`- ${victim.name}: потерян ${cons.value}<br>`);
-        break;
-
       case 'maybe_remove_item':
-        if (Math.random() >= cons.chance) continue;
-
-        const maybeVictim = cons.target;
-        if (!maybeVictim || !maybeVictim.characteristics.inventory.revealed) continue;
-
-        const allItems = maybeVictim.characteristics.inventory.value.split(',').map(i => i.trim());
-        const categoryItems = allItems.filter(i =>
-          i.includes('еды') || i.includes('консерв') || i.includes('тушенк')
-        );
-
-        if (categoryItems.length > 0) {
-          const lostItem = categoryItems[0];
-          const filtered = allItems.filter(i => i !== lostItem);
-
-          if (filtered.length === 0) {
-            maybeVictim.characteristics.inventory.value = '—';
-          } else {
-            maybeVictim.characteristics.inventory.value = filtered.join(', ');
+        // Проверяем шанс
+        if (cons.type === 'maybe_remove_item' && cons.chance !== undefined) {
+          if (Math.random() >= cons.chance) {
+            console.log(`❌ Шанс ${cons.chance*100}% не сработал для потери предмета ${cons.value}`);
+            continue;
           }
-          results.push(`- ${maybeVictim.name}: потерян ${lostItem}<br>`);
+          console.log(`✅ Шанс ${cons.chance*100}% сработал для потери предмета ${cons.value}`);
+        }
+
+        // Определяем цель
+        if (cons.category) {
+          // Случай для maybe_remove_item с категорией (из оригинального кода)
+          const maybeVictim = cons.target;
+          if (!maybeVictim || !maybeVictim.characteristics.inventory.revealed) continue;
+
+          const allItems = maybeVictim.characteristics.inventory.value.split(',').map(i => i.trim());
+          const categoryItems = allItems.filter(i =>
+            i.includes('еды') || i.includes('консерв') || i.includes('тушенк')
+          );
+
+          if (categoryItems.length > 0) {
+            const lostItem = categoryItems[0];
+            const filtered = allItems.filter(i => i !== lostItem);
+
+            if (filtered.length === 0) {
+              maybeVictim.characteristics.inventory.value = '—';
+            } else {
+              maybeVictim.characteristics.inventory.value = filtered.join(', ');
+            }
+            results.push(`- ${maybeVictim.name}: потерян ${lostItem}<br>`);
+          }
+        } else {
+          // Обычное удаление конкретного предмета
+          const victim = cons.target;
+          if (!victim || !victim.characteristics.inventory.revealed) continue;
+
+          const items = victim.characteristics.inventory.value.split(',').map(i => i.trim());
+          const newItems = items.filter(i => !i.includes(cons.value));
+
+          if (newItems.length === 0) {
+            victim.characteristics.inventory.value = '—';
+          } else {
+            victim.characteristics.inventory.value = newItems.join(', ');
+          }
+          results.push(`- ${victim.name}: потерян ${cons.value}<br>`);
         }
         break;
     }
