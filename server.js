@@ -295,9 +295,10 @@ if (!OPENROUTER_API_KEY) {
 
 // Модели для разных целей
 const STORY_MODELS = [
-  'google/gemini-2.0-flash-001',
-  'nex-agi/deepseek-v3.1-nex-n1:free',
-  'openai/gpt-4o-mini',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'qwen/qwen3-32b:free',
+  'google/gemini-2.0-flash:free',
+  'openrouter/free'
 ];
 
 
