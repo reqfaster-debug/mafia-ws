@@ -4171,160 +4171,132 @@ io.on('connection', (socket) => {
 
 
 
-  socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
+socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
     try {
-      console.log('attemptHeal called:', { gameId, playerId, experience });
+        console.log('attemptHeal called:', { gameId, playerId, experience });
 
-      const game = games.get(gameId);
-      if (!game) {
-        socket.emit('error', 'Игра не найдена');
-        return;
-      }
-
-      const initiator = game.players.find(p => p.socketId === socket.id);
-      if (!initiator || initiator.id !== game.creator) {
-        socket.emit('error', 'Только создатель может использовать лечение');
-        return;
-      }
-
-      const targetPlayer = game.players.find(p => p.id === playerId);
-      if (!targetPlayer) {
-        socket.emit('error', 'Игрок не найден');
-        return;
-      }
-
-      if (!targetPlayer.characteristics.health.revealed) {
-        socket.emit('error', 'Здоровье игрока не раскрыто');
-        return;
-      }
-
-      const diseases = parseHealthValue(targetPlayer.characteristics.health.value);
-      if (diseases.length === 0 || targetPlayer.characteristics.health.value === 'Здоров') {
-        socket.emit('error', 'У игрока нет болезней для лечения');
-        return;
-      }
-
-      const exp = parseInt(experience);
-      if (isNaN(exp) || exp < 1 || exp > 30) {
-        socket.emit('error', 'Некорректный стаж (должен быть от 1 до 30)');
-        return;
-      }
-
-      // Определяем исходы в зависимости от стажа
-      let outcomes = [];
-      if (exp >= 25 && exp <= 30) {
-        outcomes = [
-          { name: 'full', chance: 50, delta: -999 },
-          { name: 'down2', chance: 30, delta: -2 },
-          { name: 'down1', chance: 20, delta: -1 }
-        ];
-      } else if (exp >= 20 && exp <= 24) {
-        outcomes = [
-          { name: 'full', chance: 30, delta: -999 },
-          { name: 'down2', chance: 50, delta: -2 },
-          { name: 'down1', chance: 20, delta: -1 }
-        ];
-      } else if (exp >= 15 && exp <= 19) {
-        outcomes = [
-          { name: 'full', chance: 10, delta: -999 },
-          { name: 'down2', chance: 30, delta: -2 },
-          { name: 'down1', chance: 50, delta: -1 },
-          { name: 'up1', chance: 10, delta: 1 }
-        ];
-      } else if (exp >= 10 && exp <= 14) {
-        outcomes = [
-          { name: 'full', chance: 1, delta: -999 },
-          { name: 'down2', chance: 15, delta: -2 },
-          { name: 'down1', chance: 69, delta: -1 },
-          { name: 'up1', chance: 15, delta: 1 }
-        ];
-      } else if (exp >= 5 && exp <= 9) {
-        outcomes = [
-          { name: 'full', chance: 0, delta: -999 },
-          { name: 'down2', chance: 5, delta: -2 },
-          { name: 'down1', chance: 80, delta: -1 },
-          { name: 'up1', chance: 15, delta: 1 }
-        ];
-      } else { // 1-4
-        outcomes = [
-          { name: 'full', chance: 0, delta: -999 },
-          { name: 'down2', chance: 0, delta: -2 },
-          { name: 'down1', chance: 70, delta: -1 },
-          { name: 'up1', chance: 30, delta: 1 }
-        ];
-      }
-
-      const totalChance = outcomes.reduce((acc, o) => acc + o.chance, 0);
-      const roll = Math.random() * totalChance;
-      let cumulative = 0;
-      let selectedOutcome = outcomes[outcomes.length - 1];
-      for (const outcome of outcomes) {
-        cumulative += outcome.chance;
-        if (roll < cumulative) {
-          selectedOutcome = outcome;
-          break;
+        const game = games.get(gameId);
+        if (!game) {
+            socket.emit('error', 'Игра не найдена');
+            return;
         }
-      }
 
-      const currentHealth = targetPlayer.characteristics.health.value;
-      let newHealth;
-      let resultMessage = '';
-      let died = false;
+        const initiator = game.players.find(p => p.socketId === socket.id);
+        if (!initiator || initiator.id !== game.creator) {
+            socket.emit('error', 'Только создатель может использовать лечение');
+            return;
+        }
 
-      if (selectedOutcome.name === 'full') {
-        newHealth = 'Здоров';
-        resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
-      } else {
-        const delta = selectedOutcome.delta;
-        newHealth = adjustDiseaseSeverity(currentHealth, delta);
-        if (newHealth === 'DEATH') {
-          died = true;
-          targetPlayer.status = 'dead';
-          targetPlayer.statusMessage = 'умер при лечении';
-          resultMessage = `💀 ${targetPlayer.name} не пережил лечение! (Стаж ${exp} лет)`;
-        } else if (newHealth === 'Здоров') {
-          resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
-        } else {
-          if (delta < 0) {
-            if (delta === -2) resultMessage = `✅ Снижение на 2 степени! (Стаж ${exp} лет)`;
-            else resultMessage = `✅ Снижение на 1 степень! (Стаж ${exp} лет)`;
-          } else {
+        const targetPlayer = game.players.find(p => p.id === playerId);
+        if (!targetPlayer) {
+            socket.emit('error', 'Игрок не найден');
+            return;
+        }
+
+        if (!targetPlayer.characteristics.health.revealed) {
+            socket.emit('error', 'Здоровье игрока не раскрыто');
+            return;
+        }
+
+        const diseases = parseHealthValue(targetPlayer.characteristics.health.value);
+        if (diseases.length === 0 || targetPlayer.characteristics.health.value === 'Здоров') {
+            socket.emit('error', 'У игрока нет болезней для лечения');
+            return;
+        }
+
+        const exp = parseInt(experience);
+        if (isNaN(exp) || exp < 1 || exp > 30) {
+            socket.emit('error', 'Некорректный стаж (должен быть от 1 до 30)');
+            return;
+        }
+
+        // Определяем исходы в зависимости от стажа (таблица вероятностей)
+        let outcomes = [];
+        if (exp >= 25 && exp <= 30) {
+            outcomes = [
+                { name: 'full', chance: 50, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 30, label: 'Снижение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 20, label: 'Снижение на 1 степень', delta: -1 }
+            ];
+        } else if (exp >= 20 && exp <= 24) {
+            outcomes = [
+                { name: 'full', chance: 30, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 50, label: 'Снижение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 20, label: 'Снижение на 1 степень', delta: -1 }
+            ];
+        } else if (exp >= 15 && exp <= 19) {
+            outcomes = [
+                { name: 'full', chance: 10, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 30, label: 'Снижение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 50, label: 'Снижение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 10, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        } else if (exp >= 10 && exp <= 14) {
+            outcomes = [
+                { name: 'full', chance: 1, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 15, label: 'Снижение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 69, label: 'Снижение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        } else if (exp >= 5 && exp <= 9) {
+            outcomes = [
+                { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 5, label: 'Снижение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 80, label: 'Снижение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        } else { // 1-4
+            outcomes = [
+                { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 0, label: 'Снижение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 70, label: 'Снижение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 30, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        }
+
+        const totalChance = outcomes.reduce((acc, o) => acc + o.chance, 0);
+        const roll = Math.random() * totalChance;
+        let cumulative = 0;
+        let selectedOutcome = outcomes[outcomes.length - 1];
+        for (const outcome of outcomes) {
+            cumulative += outcome.chance;
+            if (roll < cumulative) {
+                selectedOutcome = outcome;
+                break;
+            }
+        }
+
+        // Формируем сообщение о результате (без изменения здоровья)
+        let resultMessage = '';
+        if (selectedOutcome.name === 'full') {
+            resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
+        } else if (selectedOutcome.name === 'down2') {
+            resultMessage = `✅ Снижение на 2 степени! (Стаж ${exp} лет)`;
+        } else if (selectedOutcome.name === 'down1') {
+            resultMessage = `✅ Снижение на 1 степень! (Стаж ${exp} лет)`;
+        } else if (selectedOutcome.name === 'up1') {
             resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
-          }
         }
-      }
 
-      if (!died) {
-        targetPlayer.characteristics.health.value = newHealth;
-      }
+        // Отправляем результат всем игрокам (без изменения данных)
+        io.to(gameId).emit('healAttemptResult', {
+            playerName: targetPlayer.name,
+            initiatorName: initiator.name,
+            message: resultMessage,
+            success: selectedOutcome.name !== 'up1', // для визуала (успех/неудача)
+            died: false, // смерть теперь не автоматическая
+            outcome: selectedOutcome.name,
+            experience: exp,
+            delta: selectedOutcome.delta // добавим, чтобы креатор знал, на сколько менять
+        });
 
-      games.set(gameId, game);
-      saveData();
-
-      console.log(`[Лечение] Игрок: ${targetPlayer.name}, Текущее здоровье: "${targetPlayer.characteristics.health.value}"`);
-      const parsed = parseHealthValue(targetPlayer.characteristics.health.value);
-      console.log('[Лечение] Распарсенные болезни:', parsed);
-
-      io.to(gameId).emit('healAttemptResult', {
-        playerName: targetPlayer.name,
-        initiatorName: initiator.name,
-        message: resultMessage,
-        success: !died && selectedOutcome.name !== 'up1',
-        died: died,
-        newHealth: targetPlayer.characteristics?.health?.value,
-        outcome: selectedOutcome.name,
-        experience: exp
-      });
-
-      emitGameUpdateFixed(gameId);
-      console.log(`Лечение: ${initiator.name} -> ${targetPlayer.name}: ${resultMessage}`);
+        console.log(`Лечение (только результат): ${initiator.name} -> ${targetPlayer.name}: ${resultMessage}`);
 
     } catch (error) {
-      console.error('❌ Ошибка в attemptHeal:', error);
-      socket.emit('error', 'Внутренняя ошибка сервера при лечении');
+        console.error('❌ Ошибка в attemptHeal:', error);
+        socket.emit('error', 'Внутренняя ошибка сервера при лечении');
     }
-  });
-
+});
 
 
 
