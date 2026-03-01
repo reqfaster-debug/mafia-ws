@@ -4287,14 +4287,16 @@ if (selectedOutcome.name === 'full') {
     saveData();
 
     // Отправляем результат всем
-    io.to(gameId).emit('healAttemptResult', {
-        playerName: targetPlayer.name,
-        initiatorName: initiator.name,
-        message: resultMessage,
-        success: !died && selectedOutcome.name !== 'up1', // успех если не смерть и не ухудшение
-        died: died,
-        newHealth: targetPlayer.characteristics?.health?.value
-    });
+io.to(gameId).emit('healAttemptResult', {
+    playerName: targetPlayer.name,
+    initiatorName: initiator.name,
+    message: resultMessage,
+    success: !died && selectedOutcome.name !== 'up1',
+    died: died,
+    newHealth: targetPlayer.characteristics?.health?.value,
+    outcome: selectedOutcome.name,      // добавляем
+    experience: exp                     // добавляем
+});
 
     emitGameUpdateFixed(gameId);
     console.log(`Лечение: ${initiator.name} -> ${targetPlayer.name}: ${resultMessage}`);
