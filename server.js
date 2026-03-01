@@ -1362,8 +1362,7 @@ const GAME_DATA = {
       { name: 'Рваная рана' },
       { name: 'Резаная рана' },
       { name: 'Колотая рана' },
-      { name: 'Огнестрельное ранение' },
-      { name: 'Сотрясение мозга' },
+      { name: 'Огнестрельное ранение' },  
       { name: 'Черепно-мозговая травма' },
       { name: 'Повреждение мениска' },
       { name: 'Разрыв мышцы' },
@@ -1416,11 +1415,9 @@ const GAME_DATA = {
       { name: 'Запор' },
       { name: 'Диарея' },
       { name: 'Геморрой' },
-      { name: 'Анальная трещина' },
+  
 
       // Психиатр (психические)
-      { name: 'Депрессия' },
-      { name: 'Тревожность' },
       { name: 'Панические атаки' },
       { name: 'ПТСР' },
       { name: 'Шизофрения' },
@@ -1431,7 +1428,6 @@ const GAME_DATA = {
       { name: 'Деменция' },
       { name: 'Галлюцинации' },
       { name: 'Бред' },
-      { name: 'ОКР' },
       { name: 'Анорексия' },
       { name: 'Булимия' },
       { name: 'Бессонница' },
@@ -2131,34 +2127,78 @@ function formatHealthValue(diseases) {
 // ========================================================
 
 // Функция генерации игрока
+// Функция генерации игрока (ПОЛНАЯ ЗАЩИТА ОТ ДУБЛИКАТОВ)
 function generatePlayer(name, socketId) {
-  const gender = GAME_DATA.characteristics.genders[Math.floor(Math.random() * GAME_DATA.characteristics.genders.length)];
-  const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
-  const profession = GAME_DATA.characteristics.professions[Math.floor(Math.random() * GAME_DATA.characteristics.professions.length)];
-  const experience = Math.floor(Math.random() * 30) + 1;
+  // Копии всех массивов для безопасного выбора
+  const availableGenders = [...GAME_DATA.characteristics.genders];
+  const availableBodyTypes = [...GAME_DATA.characteristics.bodyTypes];
+  const availableTraits = [...GAME_DATA.characteristics.traits];
+  const availableProfessions = [...GAME_DATA.characteristics.professions]; // копия объектов!
+  const availableHobbies = [...GAME_DATA.characteristics.hobbies];
+  const availableHealth = [...GAME_DATA.characteristics.health]; // копия объектов!
+  const availableInventory = [...GAME_DATA.characteristics.inventory];
+  const availablePhobias = [...GAME_DATA.characteristics.phobias];
+  const availableExtras = [...GAME_DATA.characteristics.extras];
 
-  const healthBase = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
-  let healthValue = healthBase.name;
-
-  if (healthBase.name !== 'Здоров') {
-    const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
-    healthValue = `${healthBase.name} (${severity})`;
+  // Функция для получения случайного индекса с удалением элемента
+  function takeRandomFromArray(array) {
+    if (array.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * array.length);
+    return array.splice(randomIndex, 1)[0];
   }
 
+  // Пол и возраст
+  const gender = takeRandomFromArray(availableGenders);
+  const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
+
+  // Телосложение
+  const bodyType = takeRandomFromArray(availableBodyTypes);
+
+  // Черта характера
+  const trait = takeRandomFromArray(availableTraits);
+
+  // Профессия (объект)
+  const professionObj = takeRandomFromArray(availableProfessions);
+  const experience = Math.floor(Math.random() * 30) + 1;
+  const professionValue = `${professionObj.name} (стаж ${experience} лет)`;
+
+  // Хобби
+  const hobby = takeRandomFromArray(availableHobbies);
+
+  // Здоровье (объект)
+  const healthObj = takeRandomFromArray(availableHealth);
+  let healthValue;
+  if (healthObj.name === 'Здоров') {
+    healthValue = 'Здоров';
+  } else {
+    const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+    healthValue = `${healthObj.name} (${severity})`;
+  }
+
+  // Инвентарь
+  const inventory = takeRandomFromArray(availableInventory);
+
+  // Фобия
+  const phobia = takeRandomFromArray(availablePhobias);
+
+  // Доп. сведения
+  const extra = takeRandomFromArray(availableExtras);
+
+  // Создаём игрока (ВСЕ ЗНАЧЕНИЯ УНИКАЛЬНЫ)
   const player = {
     id: uuidv4(),
     socketId,
     name,
     characteristics: {
       gender: { value: `${gender} (${age} лет)`, revealed: false },
-      bodyType: { value: GAME_DATA.characteristics.bodyTypes[Math.floor(Math.random() * GAME_DATA.characteristics.bodyTypes.length)], revealed: false },
-      trait: { value: GAME_DATA.characteristics.traits[Math.floor(Math.random() * GAME_DATA.characteristics.traits.length)], revealed: false },
-      profession: { value: `${profession.name} (стаж ${experience} лет)`, revealed: false },
-      hobby: { value: GAME_DATA.characteristics.hobbies[Math.floor(Math.random() * GAME_DATA.characteristics.hobbies.length)], revealed: false },
+      bodyType: { value: bodyType, revealed: false },
+      trait: { value: trait, revealed: false },
+      profession: { value: professionValue, revealed: false },
+      hobby: { value: hobby, revealed: false },
       health: { value: healthValue, revealed: false },
-      inventory: { value: GAME_DATA.characteristics.inventory[Math.floor(Math.random() * GAME_DATA.characteristics.inventory.length)], revealed: false },
-      phobia: { value: GAME_DATA.characteristics.phobias[Math.floor(Math.random() * GAME_DATA.characteristics.phobias.length)], revealed: false },
-      extra: { value: GAME_DATA.characteristics.extras[Math.floor(Math.random() * GAME_DATA.characteristics.extras.length)], revealed: false }
+      inventory: { value: inventory, revealed: false },
+      phobia: { value: phobia, revealed: false },
+      extra: { value: extra, revealed: false }
     }
   };
 
@@ -2189,10 +2229,10 @@ function extractHealthName(healthString) {
 // ====================================================
 
 // ============ НОВЫЕ ФУНКЦИИ ДЛЯ ХАРАКТЕРИСТИК ============
-function getRandomValue(charKey, currentValue = null) {
-  console.log(`getRandomValue called for ${charKey}, current: ${currentValue}`);
+// ============ ФУНКЦИЯ ДЛЯ ХАРАКТЕРИСТИК (ПОЛНАЯ ЗАЩИТА ОТ ДУБЛИКАТОВ) ============
+function getRandomValue(charKey, player, excludeAllOthers = true) {
+  console.log(`getRandomValue called for ${charKey}, player: ${player.name}`);
 
-  // Маппинг ключей характеристик к правильным ключам в GAME_DATA
   const keyMapping = {
     'gender': 'genders',
     'bodyType': 'bodyTypes',
@@ -2206,44 +2246,81 @@ function getRandomValue(charKey, currentValue = null) {
   };
 
   const dataKey = keyMapping[charKey] || charKey;
-  const charData = GAME_DATA.characteristics[dataKey];
+  let sourceArray = GAME_DATA.characteristics[dataKey];
 
-  if (!charData) {
+  if (!sourceArray) {
     console.log(`No data for ${charKey} (looked for ${dataKey})`);
     return '—';
   }
 
-  let newValue;
-  const maxAttempts = 50;
-  let attempts = 0;
+  // Собираем ВСЕ уже использованные значения этого игрока
+  const usedValues = [];
+  
+  if (excludeAllOthers) {
+    // Добавляем значения из всех характеристик, кроме текущей
+    Object.entries(player.characteristics).forEach(([key, char]) => {
+      if (key !== charKey && char.value && char.value !== '—') {
+        // Для профессии, здоровья и инвентаря может быть особый формат
+        if (key === 'profession') {
+          // Извлекаем название профессии из строки "Хирург (стаж 5 лет)"
+          const profMatch = char.value.match(/^([^(]+)/);
+          if (profMatch) usedValues.push(profMatch[1].trim());
+        } else if (key === 'health' && char.value !== 'Здоров') {
+          // Извлекаем название болезни из строки "Грипп (тяжелая)"
+          const healthMatch = char.value.match(/^([^(]+)/);
+          if (healthMatch) usedValues.push(healthMatch[1].trim());
+        } else {
+          usedValues.push(char.value);
+        }
+      }
+    });
+  }
 
+  // Фильтруем доступные значения
+  let availableValues;
+  
   if (charKey === 'profession') {
-    do {
-      const prof = charData[Math.floor(Math.random() * charData.length)];
-      const experience = Math.floor(Math.random() * 20) + 1;
-      newValue = `${prof.name} (стаж ${experience} лет)`;
-      attempts++;
-    } while (newValue === currentValue && attempts < maxAttempts);
-    return newValue;
+    // Для профессий фильтруем по названию
+    availableValues = sourceArray.filter(prof => {
+      return !usedValues.some(used => used === prof.name);
+    });
+  } else if (charKey === 'health') {
+    // Для здоровья фильтруем по названию болезни
+    availableValues = sourceArray.filter(health => {
+      if (health.name === 'Здоров') return true; // Здоров можно оставить
+      return !usedValues.some(used => used === health.name);
+    });
+  } else {
+    // Для простых массивов строк
+    availableValues = sourceArray.filter(val => !usedValues.includes(val));
   }
 
-  if (charKey === 'gender') {
-    do {
-      const gender = charData[Math.floor(Math.random() * charData.length)];
-      const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
-      newValue = `${gender} (${age} лет)`;
-      attempts++;
-      console.log(`Gender attempt ${attempts}: ${newValue}`);
-    } while (newValue === currentValue && attempts < maxAttempts);
-    return newValue;
+  // Если после фильтрации ничего не осталось, создаём копию всего массива
+  if (availableValues.length === 0) {
+    console.warn(`Нет уникальных значений для ${charKey}, создаём копию`);
+    availableValues = [...sourceArray];
   }
 
-  // Для всех остальных характеристик
-  do {
-    newValue = charData[Math.floor(Math.random() * charData.length)];
-    attempts++;
-    console.log(`${charKey} attempt ${attempts}: ${newValue}`);
-  } while (newValue === currentValue && attempts < maxAttempts);
+  // Выбираем случайное значение
+  const randomIndex = Math.floor(Math.random() * availableValues.length);
+  let newValue = availableValues[randomIndex];
+
+  // Форматируем в зависимости от типа характеристики
+  if (charKey === 'profession') {
+    const prof = newValue;
+    const experience = Math.floor(Math.random() * 20) + 1;
+    newValue = `${prof.name} (стаж ${experience} лет)`;
+  } else if (charKey === 'gender') {
+    const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
+    newValue = `${newValue} (${age} лет)`;
+  } else if (charKey === 'health') {
+    if (newValue.name === 'Здоров') {
+      newValue = 'Здоров';
+    } else {
+      const severity = getRandomSeverity();
+      newValue = `${newValue.name} (${severity})`;
+    }
+  }
 
   return newValue;
 }
@@ -2378,7 +2455,7 @@ const ItemRegistry = {
 const LocationRegistry = [
   'заброшенная больница', 'старая заправка', 'руины магазина', 'лесопосадка', 'овраг',
   'брошенный дом', 'подвал', 'чердак', 'железнодорожная станция', 'ферма',
-  'овощехранилище', 'гараж', 'стройка', 'кладбище', 'школа', 'водонапорная башня'
+  'овощехранилище', 'гараж', 'стройка', 'школа', 'водонапорная башня'
 ];
 
 const ThreatRegistry = [
@@ -2387,8 +2464,32 @@ const ThreatRegistry = [
 ];
 
 const InjuryRegistry = [
-  'Перелом', 'Вывих', 'Растяжение', 'Рваная рана', 'Колотая рана', 'Сотрясение мозга',
-  'Пневмония', 'Ангина', 'ОРВИ', 'Отравление', 'Ожог', 'Обморожение'
+  'Перелом', 
+  'Пневмония', 'Ангина', 'ОРВИ', 'Отравление', 'Ожог', 
+  'Обморожение', 'Анемия', 'Авитаминоз', 'Гипертония', 
+  'Гипотония', 'Аритмия', 'Тахикардия', 'Брадикардия', 
+  'Ишемия', 'Стенокардия', 'Инфаркт', 'Инсульт', 'Атеросклероз', 
+  'Варикоз', 'Тромбоз', 'Кардиомиопатия', 'Онкология', 
+  'Лейкоз', 'Лимфома', 'Меланома', 'Саркома', 'Глиобластома', 'Эпилепсия', 
+  'Невралгия', 'Неврит', 'Радикулит', 'Остеохондроз', 'Грыжа', 'Паркинсон', 'Рассеянный склероз', 
+  'Болезнь Альцгеймера', 'Менингит', 'Энцефалит', 'Невропатия', 'Синдром Туретта', 'Туберкулез', 
+  'Гепатит A', 'Гепатит B', 'Гепатит C', 'ВИЧ', 'СПИД', 'Пневмония', 'Бронхит', 'Ангина', 'Грипп', 
+  'ОРВИ', 'Корь', 'Краснуха', 'Ветрянка', 'Свинка', 'Коклюш', 'Дифтерия', 'Скарлатина', 'Малярия', 'Тиф', 
+  'Холера', 'Чума', 'Сибирская язва', 'Бешенство', 'Столбняк', 'Ботулизм', 'Сальмонеллез', 'Дизентерия', 'Глисты', 
+  'Аскаридоз', 'Аллергия', 'Астма', 'Поллиноз', 'Крапивница', 'Отек Квинке', 'Анафилаксия', 'Экзема', 'Волчанка',
+   'Ревматоидный артрит', 'Склеродермия', 'Синдром Шегрена', 'Болезнь Крона', 'Язвенный колит', 'Псориаз', 'Дерматит', 
+   'Нейродермит', 'Себорея', 'Акне', 'Фурункулез', 'Карбункул', 'Абсцесс', 'Флегмона', 'Рожа', 'Грибок', 'Лишай', 'Чесотка', 
+   'Педикулез', 'Ожог', 'Обморожение', 'Перелом', 'Вывих', 'Растяжение', 'Разрыв связок', 'Гематома', 'Рваная рана', 'Резаная рана', 
+   'Колотая рана', 'Огнестрельное ранение', 'Черепно-мозговая травма', 'Повреждение мениска', 'Разрыв мышцы', 
+   'Катаракта', 'Глаукома', 'Конъюнктивит', 'Блефарит', 'Ячмень', 'Кератит', 
+   'Косоглазие', 'Отслоение сетчатки', 'Эндометриоз', 'Миома матки', 'Киста яичника', 'Полип', 'Воспаление придатков', 
+   'Молочница', 'Бактериальный вагиноз', 'Герпес генитальный', 'Папилломавирус', 'Бесплодие', 'Импотенция', 'Простатит', 
+   'Аденома простаты', 'Орхит', 'Эпидидимит', 'Уретрит', 'Цистит', 'Пиелонефрит', 'Гастрит', 'Язва', 'Гастродуоденит', 'Панкреатит', 'Холецистит', 
+   'Желчекаменная болезнь', 'Колит', 'Энтерит', 'Дисбактериоз', 'Изжога', 'Рефлюкс', 'Запор', 'Диарея', 'Геморрой', 
+   'Тревожность', 'Панические атаки', 'ПТСР', 'Шизофрения', 'Биполярное расстройство', 'Невроз', 'Истерия', 'Паранойя', 
+   'Галлюцинации', 'Бред', 'ОКР', 'Анорексия', 'Булимия', 'Бессонница', 'Лунатизм', 'Отит', 'Синусит', 'Гайморит', 'Фронтит', 
+   'Ринит', 'Фарингит', 'Ларингит', 'Тонзиллит', 'Аденоиды', 'Тугоухость', 'Глухота', 'Потеря голоса', 'Радиационное поражение', 
+   'Лучевая болезнь', 'Отравление', 'Интоксикация', 'Сепсис', 'Заражение крови', 'Гангрена', 'Некроз', 'Фимоз', 'Парафимоз', 'Водянка', 'Асцит', 'Подагра', 'Ревматизм',
 ];
 // =======================================================
 
@@ -2879,7 +2980,7 @@ async function generateStoryFromFacts(facts, template, game) {
     }
   }
 
-  const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (5-6 предложений) на основе фактов.
+  const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (от 6 до 10 предложений) на основе фактов. Событие должно быть описано в захватывающем экшен-стиле.
 
 **КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА (НАРУШЕНИЕ НЕДОПУСТИМО):**
 
@@ -2944,52 +3045,69 @@ ${factsDescription}
 
 **ПРИМЕРЫ ПРАВИЛЬНЫХ СОБЫТИЙ С УЧЕТОМ ФОБИЙ И ЧЕРТ ХАРАКТЕРА:**
 
-**ПРИМЕР 1 - Фобия (боязнь собак):**
-Алексей, страдающий кинофобией (боязнь собак), стоял у входа в бункер, когда из темноты выбежала одичавшая собака. Он в панике отшатнулся, споткнулся о камень и упал, получив ушиб копчика (легкий). Дима, не боящийся собак, отогнал животное камнями.
+ПРИМЕР 1 
+Мария дежурила у входа, вглядываясь в темноту, когда из неё бесшумно вынырнули трое мужчин в рваной одежде. Они набросились внезапно, зажимая рот и выкручивая руки, прежде чем она успела крикнуть. Подоспевшие на шум Алексей и Дима отбивали её в жестокой схватке – мелькали кулаки, ножи, хрустели кости. Когда мародёры наконец отступили, Мария сидела на земле, трясясь от пережитого ужаса, не в силах вымолвить ни слова и вздрагивая от каждого движения мужчин, пытавшихся ей помочь. С того дня она боится оставаться рядом с незнакомыми мужчинами, в её глазах застыл ужас, а руки начинают дрожать при виде агрессивно настроенного человека.
 
 Последствия:
-- Алексей: ушиб копчика (легкий)<br>
+    Мария: фобия андрофобия (боязнь мужчин)
+    Дима: потерян нож
 
-**ПРИМЕР 2 - Черта характера (трусливый):**
-Дима, известный своей трусливостью, стоял у входа в бункер, когда недалеко раздался громкий треск. Он резко дернулся и порезал руку об острый край металлической двери, получив резаную рану (легкая). На самом деле это просто упало сухое дерево.
 
-Последствия:
-- Дима: резаная рана (легкая)<br>
-
-**ПРИМЕР 3 - Черта характера (храбрый) + фобия (высоты):**
-Храбрый Алексей, но страдающий акрофобией, полез на скалу рядом со входом, чтобы осмотреть окрестности. На полпути у него закружилась голова от страха высоты, он сорвался и упал, получив перелом руки (средний). Дима помог ему добраться до входа.
+ПРИМЕР 2 - Черта характера (трусливый):
+Дима, которого все знали как трусоватого парня, стоял на посту у входа, нервно оглядываясь. Внезапно сзади раздался оглушительный треск ломающихся веток. Дима вздрогнул всем телом, резко развернулся и, поскользнувшись, рухнул прямо на острый выступ металлической двери. Кровь хлынула из глубокого пореза на боку (тяжелый), пока он в ужасе пытался понять, что происходит. На самом деле это просто упало сухое дерево, но паника уже сделала своё дело.
 
 Последствия:
-- Алексей: перелом руки (средний)<br>
 
-**ПРИМЕР 4 - Фобия (боязнь замкнутых пространств):**
-Мария, страдающая клаустрофобией, заглянула в техническую нишу у входа в бункер, где что-то блестело. В тесном пространстве у нее началась паника, она резко выдернула руку и поранила ее о торчащую арматуру, получив рваную рану предплечья (средняя). Из ниши выпал ржавый ящик с консервами (+2 месяца).
+    Дима: резаная рана (тяжелая)
 
-Последствия:
-- Мария: рваная рана (средняя)<br>
-- Бункер: +2 месяца еды<br>
-
-**ПРИМЕР 5 - Черта характера (импульсивный):**
-Импульсивный Дима, увидев в кустах недалеко от входа какое-то движение, бросился туда, не предупредив остальных. Он провалился в яму, прикрытую ветками, и получил ушиб ноги (средний). Выбраться ему помогли Алексей и Мария.
+ПРИМЕР 3 - Черта характера (храбрый) + фобия (высоты):
+Храбрый Алексей решил, несмотря на свою акрофобию, залезть на скалу у входа, чтобы оценить обстановку. Дрожащими руками он цеплялся за выступы, борясь с подкатывающим ужасом, но упрямо лез вверх. Внезапно нога соскользнула – и тело с глухим стуком рухнуло на камни внизу. Дима, бросившийся на помощь, нашёл его корчащимся от дикой боли в плече: перелом ключицы (тяжелый) и ушибы. Храбрость обернулась катастрофой, поддавшись страху высоты.
 
 Последствия:
-- Дима: ушиб ноги (средний)<br>
 
-**ПРИМЕР 6 - Фобия (боязнь темноты) + черта (осторожный):**
-Алексей, боящийся темноты, стоял у входа с фонариком, освещая окрестности. Его осторожность помогла заметить приближающихся бандитов. Но от неожиданности он выронил фонарик, который разбился. Бандиты забрали у группы ящик тушенки (+3 месяца).
+    Алексей: перелом ключицы (тяжелый)
 
-Последствия:
-- Потерян предмет: фонарик<br>
-- Бункер: -3 месяца еды<br>
-
-**ПРИМЕР 7 - Обычный вариант (без особых реакций):**
-Алексей заметил под камнями прямо у входа в бункер край рюкзака, наполовину присыпанный землей. Раскапывая его, Алексей порезал руку об острый камень, получив резаную рану ладони (легкая). В рюкзаке оказались банки тушенки (+2 месяца к запасам еды).
+ПРИМЕР 4 - Фобия (боязнь замкнутых пространств):
+Мария заглянула в тёмную техническую нишу у самого входа – там что-то тускло блеснуло. Едва она просунула голову внутрь, как клаустрофобия взорвала сознание диким животным страхом. Воздух кончился, стены сдавили грудь – в панике она рванулась назад, с диким криком выдирая руку из тесного проёма. Острая ржавая арматура вспорола предплечье до кости, оставив глубокую рваную рану (тяжелая). А из ниши, кувыркаясь, выпал проржавевший ящик с консервами, которые покатились по земле (+2 месяца еды).
 
 Последствия:
-- Алексей: резаная рана (легкая)<br>
-- Бункер: +2 месяца еды<br>
+    Мария: рваная рана (тяжелая)
+    Бункер: +2 месяца еды
 
-Напиши историю, используя факты. Обязательно учитывай фобии и черты характера игроков, если они есть в фактах. Если фобия связана с событием - покажи ее влияние. Если черта характера яркая - пусть она проявится в реакции. Не добавляй новых фактов. Строго следуй формату болезней (с указанием тяжести в скобках) и еды (с указанием месяцев в скобках). **Все действия происходят только у входа в бункер. Игроки НИКУДА не отходят.**`;
+ПРИМЕР 5 - Черта характера (импульсивный):
+Импульсивный Дима, краем глаза заметив шевеление в кустах, с криком «Там кто-то есть!» рванул туда, даже не предупредив остальных. Земля ушла из-под ног – он провалился в яму-ловушку, прикрытую гнилыми ветками. Глухой удар, хруст, и Дима заорал от дикой боли в сломанной ноге (перелом берцовой кости, тяжелый). Пока Алексей и Мария, чертыхаясь, вытаскивали его на верёвках, Дима скрипел зубами, проклиная свою дурацкую привычку лезть на рожон.
+
+Последствия:
+    Дима: перелом ноги (тяжелый)
+
+ПРИМЕР 6 - Фобия (боязнь темноты) + черта (осторожный):
+Игрок, до ужаса боящийся темноты, стоял на стреме с мощным фонарём, освещая подступы к бункеру. Благодаря своей природной осторожности он первым заметил крадущиеся в темноте тени – бандиты! Но от неожиданности и страха фонарь выскользнул из вспотевших рук и с треском разбился о камни, погрузив всё в кромешный мрак. Тени немедленно ожили – бандиты налетели, и в суматохе утащили из бункера запасы еды (+3 месяца). Группа осталась в темноте с трясущимся от страха игроком.
+
+Последствия:
+    Потерян предмет: фонарик
+    Бункер: -3 месяца еды
+
+ПРИМЕР 7 - Обычный вариант (без особых реакций):
+Игрок разгребал мусор у входа, когда из-под камней показался угол рюкзака. Схватив его, он с силой дёрнул, но рюкзак застрял. Напрягшись, Алексей рванул сильнее – рука соскользнула, и он с размаху полоснул ладонью по острому краю камня, взвыв от боли. Кровь залила запястье, но цель была достигнута: из ямы вылетел потрёпанный рюкзак, набитый банками тушёнки (+2 месяца к запасам еды). Цена находки – резаная рана ладони (легкая) и испорченное настроение.
+
+Последствия:
+    Алексей: резаная рана (легкая)
+    Бункер: +2 месяца еды
+
+ПРИМЕР 8 - Геморрой (легкая степень, приобретённый):
+
+Игрок, бывший дальнобойщик, уже месяц питается всухомятку и пьёт мало воды из-за экономии запасов. Сегодня, присев за ближайший валун справить нужду, он с удивлением почувствовал жжение и зуд. На траве остались небольшие следы крови – от недостатка жидкости и постоянных запоров у него обострился хронический геморрой (лёгкая степень), который годами дремал после сидячей работы.
+
+Последствия:
+    Игрок: геморрой (лёгкая степень)
+
+
+
+
+
+
+
+Напиши захватывающую экшен-историю, используя факты. Обязательно учитывай профессии, фобии, черты характера, возраст, доп. сведения и телосложение игроков, если они есть в фактах. Если фобия связана с событием - покажи ее влияние. Если черта характера яркая - пусть она проявится в реакции. Не добавляй новых фактов. Строго следуй формату болезней (с указанием тяжести в скобках) и еды (с указанием месяцев в скобках). **Все действия происходят только у входа в бункер. Игроки НИКУДА не отходят.**`;
 
   // Пробуем разные модели
   for (const model of STORY_MODELS) {
@@ -3683,115 +3801,153 @@ io.on('connection', (socket) => {
   });
 
   // ============ ОБРАБОТЧИКИ ДЛЯ ХАРАКТЕРИСТИК ============
-  socket.on('changeCharacteristic', ({ gameId, playerId, characteristic, action, value, index }) => {
-    console.log('changeCharacteristic called:', { gameId, playerId, characteristic, action, value, index });
+// ============ ОБРАБОТЧИКИ ДЛЯ ХАРАКТЕРИСТИК ============
+socket.on('changeCharacteristic', ({ gameId, playerId, characteristic, action, value, index }) => {
+  console.log('changeCharacteristic called:', { gameId, playerId, characteristic, action, value, index });
 
-    const game = games.get(gameId);
-    if (!game) {
-      socket.emit('error', 'Игра не найдена');
-      return;
-    }
+  const game = games.get(gameId);
+  if (!game) {
+    socket.emit('error', 'Игра не найдена');
+    return;
+  }
 
-    const initiator = game.players.find(p => p.socketId === socket.id);
-    if (!initiator || initiator.id !== game.creator) {
-      socket.emit('error', 'Только создатель может изменять характеристики');
-      return;
-    }
+  const initiator = game.players.find(p => p.socketId === socket.id);
+  if (!initiator || initiator.id !== game.creator) {
+    socket.emit('error', 'Только создатель может изменять характеристики');
+    return;
+  }
 
-    const targetPlayer = game.players.find(p => p.id === playerId);
-    if (!targetPlayer) {
-      socket.emit('error', 'Игрок не найден');
-      return;
-    }
+  const targetPlayer = game.players.find(p => p.id === playerId);
+  if (!targetPlayer) {
+    socket.emit('error', 'Игрок не найден');
+    return;
+  }
 
-    const currentValue = targetPlayer.characteristics[characteristic].value;
-    const parsed = parseCharacteristicValue(characteristic, currentValue);
-    let newValue;
+  const currentValue = targetPlayer.characteristics[characteristic].value;
+  const parsed = parseCharacteristicValue(characteristic, currentValue);
+  let newValue;
 
-    switch (action) {
-      case 'random':
-        newValue = getRandomValue(characteristic, currentValue);
-        break;
+  switch (action) {
+    case 'random':
+      // Передаём весь объект игрока для проверки уникальности
+      newValue = getRandomValue(characteristic, targetPlayer, true);
+      break;
 
-      case 'select':
-        if (!value) {
-          socket.emit('error', 'Не выбрано значение');
-          return;
-        }
-        if (characteristic === 'profession') {
-          const prof = GAME_DATA.characteristics.professions.find(p => p.name === value);
-          if (prof) {
-            const experience = Math.floor(Math.random() * 20) + 1;
-            newValue = `${prof.name} (стаж ${experience} лет)`;
+    case 'select':
+      if (!value) {
+        socket.emit('error', 'Не выбрано значение');
+        return;
+      }
+      
+      // Проверяем уникальность выбранного значения
+      const usedValues = [];
+      Object.entries(targetPlayer.characteristics).forEach(([key, char]) => {
+        if (key !== characteristic && char.value && char.value !== '—') {
+          if (key === 'profession') {
+            const profMatch = char.value.match(/^([^(]+)/);
+            if (profMatch) usedValues.push(profMatch[1].trim());
+          } else if (key === 'health' && char.value !== 'Здоров') {
+            const healthMatch = char.value.match(/^([^(]+)/);
+            if (healthMatch) usedValues.push(healthMatch[1].trim());
           } else {
-            newValue = value;
+            usedValues.push(char.value);
           }
+        }
+      });
+      
+      if (usedValues.includes(value)) {
+        socket.emit('error', 'Это значение уже используется в другой характеристике');
+        return;
+      }
+
+      if (characteristic === 'profession') {
+        const prof = GAME_DATA.characteristics.professions.find(p => p.name === value);
+        if (prof) {
+          const experience = Math.floor(Math.random() * 20) + 1;
+          newValue = `${prof.name} (стаж ${experience} лет)`;
         } else {
           newValue = value;
         }
-        break;
-
-      case 'add':
-        if (!value) {
-          socket.emit('error', 'Не выбрано значение');
-          return;
-        }
-        if (characteristic === 'profession' || characteristic === 'gender') {
-          socket.emit('error', 'Нельзя добавлять к этой характеристике');
-          return;
-        }
-        newValue = formatCharacteristicValue(characteristic, parsed.main, [...parsed.items, value]);
-        break;
-
-      case 'remove':
-        if (index === undefined || index < 0) {
-          socket.emit('error', 'Не указан элемент для удаления');
-          return;
-        }
-
-        if (characteristic === 'profession' || characteristic === 'gender') {
-          socket.emit('error', 'Нельзя удалять части этой характеристики');
-          return;
-        }
-
-        if (index === 0) {
-          if (parsed.items.length > 0) {
-            newValue = formatCharacteristicValue(characteristic, parsed.items[0], parsed.items.slice(1));
-          } else {
-            newValue = '—';
-          }
+      } else if (characteristic === 'health') {
+        if (value === 'Здоров') {
+          newValue = 'Здоров';
         } else {
-          const itemIndex = index - 1;
-          if (itemIndex >= 0 && itemIndex < parsed.items.length) {
-            const newItems = [...parsed.items];
-            newItems.splice(itemIndex, 1);
-            newValue = formatCharacteristicValue(characteristic, parsed.main, newItems);
-          } else {
-            socket.emit('error', 'Элемент не найден');
-            return;
-          }
+          const severity = getRandomSeverity();
+          newValue = `${value} (${severity})`;
         }
-        break;
+      } else {
+        newValue = value;
+      }
+      break;
 
-      default:
-        socket.emit('error', 'Неизвестное действие');
+    case 'add':
+      if (!value) {
+        socket.emit('error', 'Не выбрано значение');
         return;
-    }
+      }
+      
+      // При добавлении проверяем на совпадение с уже имеющимися
+      const allCurrentValues = [parsed.main, ...parsed.items].filter(v => v && v !== '—');
+      if (allCurrentValues.includes(value)) {
+        socket.emit('error', 'Это значение уже есть в характеристике');
+        return;
+      }
 
-    targetPlayer.characteristics[characteristic].value = newValue;
+      if (characteristic === 'profession' || characteristic === 'gender' || characteristic === 'health') {
+        socket.emit('error', 'Нельзя добавлять к этой характеристике');
+        return;
+      }
+      newValue = formatCharacteristicValue(characteristic, parsed.main, [...parsed.items, value]);
+      break;
 
-    // Если изменили инвентарь, обновляем ресурсы бункера
-    if (characteristic === 'inventory' && game.bunkerResources) {
-      // Переинициализируем ресурсы бункера
-      initializeBunkerResources(game);
-    }
+    case 'remove':
+      if (index === undefined || index < 0) {
+        socket.emit('error', 'Не указан элемент для удаления');
+        return;
+      }
 
-    games.set(gameId, game);
-    emitGameUpdateFixed(gameId);
-    saveData();
+      if (characteristic === 'profession' || characteristic === 'gender' || characteristic === 'health') {
+        socket.emit('error', 'Нельзя удалять части этой характеристики');
+        return;
+      }
 
-    console.log(`Создатель изменил характеристику ${characteristic} игрока ${targetPlayer.name}`);
-  });
+      if (index === 0) {
+        if (parsed.items.length > 0) {
+          newValue = formatCharacteristicValue(characteristic, parsed.items[0], parsed.items.slice(1));
+        } else {
+          newValue = '—';
+        }
+      } else {
+        const itemIndex = index - 1;
+        if (itemIndex >= 0 && itemIndex < parsed.items.length) {
+          const newItems = [...parsed.items];
+          newItems.splice(itemIndex, 1);
+          newValue = formatCharacteristicValue(characteristic, parsed.main, newItems);
+        } else {
+          socket.emit('error', 'Элемент не найден');
+          return;
+        }
+      }
+      break;
+
+    default:
+      socket.emit('error', 'Неизвестное действие');
+      return;
+  }
+
+  targetPlayer.characteristics[characteristic].value = newValue;
+
+  // Если изменили инвентарь, обновляем ресурсы бункера
+  if (characteristic === 'inventory' && game.bunkerResources) {
+    initializeBunkerResources(game);
+  }
+
+  games.set(gameId, game);
+  emitGameUpdateFixed(gameId);
+  saveData();
+
+  console.log(`Создатель изменил характеристику ${characteristic} игрока ${targetPlayer.name}`);
+});
 
 
 
