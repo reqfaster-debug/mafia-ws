@@ -4210,49 +4210,50 @@ socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
             return;
         }
 
-        // Определяем исходы в зависимости от стажа (таблица вероятностей)
-        let outcomes = [];
-        if (exp >= 25 && exp <= 30) {
-            outcomes = [
-                { name: 'full', chance: 50, label: 'Полное излечение', delta: -999 },
-                { name: 'down2', chance: 30, label: 'Снижение на 2 степени', delta: -2 },
-                { name: 'down1', chance: 20, label: 'Снижение на 1 степень', delta: -1 }
-            ];
-        } else if (exp >= 20 && exp <= 24) {
-            outcomes = [
-                { name: 'full', chance: 30, label: 'Полное излечение', delta: -999 },
-                { name: 'down2', chance: 50, label: 'Снижение на 2 степени', delta: -2 },
-                { name: 'down1', chance: 20, label: 'Снижение на 1 степень', delta: -1 }
-            ];
-        } else if (exp >= 15 && exp <= 19) {
-            outcomes = [
-                { name: 'full', chance: 10, label: 'Полное излечение', delta: -999 },
-                { name: 'down2', chance: 30, label: 'Снижение на 2 степени', delta: -2 },
-                { name: 'down1', chance: 50, label: 'Снижение на 1 степень', delta: -1 },
-                { name: 'up1', chance: 10, label: 'Ухудшение на 1 степень', delta: 1 }
-            ];
-        } else if (exp >= 10 && exp <= 14) {
-            outcomes = [
-                { name: 'full', chance: 1, label: 'Полное излечение', delta: -999 },
-                { name: 'down2', chance: 15, label: 'Снижение на 2 степени', delta: -2 },
-                { name: 'down1', chance: 69, label: 'Снижение на 1 степень', delta: -1 },
-                { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
-            ];
-        } else if (exp >= 5 && exp <= 9) {
-            outcomes = [
-                { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
-                { name: 'down2', chance: 5, label: 'Снижение на 2 степени', delta: -2 },
-                { name: 'down1', chance: 80, label: 'Снижение на 1 степень', delta: -1 },
-                { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
-            ];
-        } else { // 1-4
-            outcomes = [
-                { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
-                { name: 'down2', chance: 0, label: 'Снижение на 2 степени', delta: -2 },
-                { name: 'down1', chance: 70, label: 'Снижение на 1 степень', delta: -1 },
-                { name: 'up1', chance: 30, label: 'Ухудшение на 1 степень', delta: 1 }
-            ];
-        }
+// Определяем исходы в зависимости от стажа (таблица вероятностей)
+let outcomes = [];
+if (exp >= 25 && exp <= 30) {
+    outcomes = [
+        { name: 'full', chance: 50, label: 'Полное излечение', delta: -999 },
+        { name: 'down2', chance: 30, label: 'Улучшение на 2 степени', delta: -2 },
+        { name: 'down1', chance: 20, label: 'Улучшение на 1 степень', delta: -1 }
+    ];
+} else if (exp >= 20 && exp <= 24) {
+    outcomes = [
+        { name: 'full', chance: 30, label: 'Полное излечение', delta: -999 },
+        { name: 'down2', chance: 50, label: 'Улучшение на 2 степени', delta: -2 },
+        { name: 'down1', chance: 20, label: 'Улучшение на 1 степень', delta: -1 }
+    ];
+} else if (exp >= 15 && exp <= 19) {
+    outcomes = [
+        { name: 'full', chance: 10, label: 'Полное излечение', delta: -999 },
+        { name: 'down2', chance: 30, label: 'Улучшение на 2 степени', delta: -2 },
+        { name: 'down1', chance: 50, label: 'Улучшение на 1 степень', delta: -1 },
+        { name: 'up1', chance: 10, label: 'Ухудшение на 1 степень', delta: 1 }
+    ];
+} else if (exp >= 10 && exp <= 14) {
+    outcomes = [
+        { name: 'full', chance: 1, label: 'Полное излечение', delta: -999 },
+        { name: 'down2', chance: 15, label: 'Улучшение на 2 степени', delta: -2 },
+        { name: 'down1', chance: 69, label: 'Улучшение на 1 степень', delta: -1 },
+        { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
+    ];
+} else if (exp >= 5 && exp <= 9) {
+    outcomes = [
+        { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
+        { name: 'down2', chance: 5, label: 'Улучшение на 2 степени', delta: -2 },
+        { name: 'down1', chance: 80, label: 'Улучшение на 1 степень', delta: -1 },
+        { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
+    ];
+} else { // 1-4
+    outcomes = [
+        { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
+        { name: 'down2', chance: 0, label: 'Улучшение на 2 степени', delta: -2 },
+        { name: 'down1', chance: 70, label: 'Улучшение на 1 степень', delta: -1 },
+        { name: 'up1', chance: 30, label: 'Ухудшение на 1 степень', delta: 1 }
+    ];
+}
+        
 
         const totalChance = outcomes.reduce((acc, o) => acc + o.chance, 0);
         const roll = Math.random() * totalChance;
@@ -4266,17 +4267,16 @@ socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
             }
         }
 
-        // Формируем сообщение о результате (без изменения здоровья)
-        let resultMessage = '';
-        if (selectedOutcome.name === 'full') {
-            resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
-        } else if (selectedOutcome.name === 'down2') {
-            resultMessage = `✅ Снижение на 2 степени! (Стаж ${exp} лет)`;
-        } else if (selectedOutcome.name === 'down1') {
-            resultMessage = `✅ Снижение на 1 степень! (Стаж ${exp} лет)`;
-        } else if (selectedOutcome.name === 'up1') {
-            resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
-        }
+let resultMessage = '';
+if (selectedOutcome.name === 'full') {
+    resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
+} else if (selectedOutcome.name === 'down2') {
+    resultMessage = `✅ Улучшение на 2 степени! (Стаж ${exp} лет)`;
+} else if (selectedOutcome.name === 'down1') {
+    resultMessage = `✅ Улучшение на 1 степень! (Стаж ${exp} лет)`;
+} else if (selectedOutcome.name === 'up1') {
+    resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
+}
 
         // Отправляем результат всем игрокам (без изменения данных)
         io.to(gameId).emit('healAttemptResult', {
