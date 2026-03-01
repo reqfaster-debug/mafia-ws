@@ -329,7 +329,7 @@ async function callModelWithTimeout(model, prompt, timeoutMs = 20000) {
           }
         ],
         temperature: 1,
-        max_tokens: 2000
+        max_tokens: 10000
       },
       {
         headers: {
@@ -3284,7 +3284,7 @@ async function generateStoryFromFacts(facts, template, game) {
     }
   }
 
-  const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (от 6 до 10 предложений) на основе фактов. Событие должно быть описано в захватывающем экшен-стиле.
+  const prompt = `Ты генератор историй для игры "Бункер". Сгенерируй событие (6 предложений) на основе фактов. Событие должно быть описано в захватывающем экшен-стиле.
 
 **КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА (НАРУШЕНИЕ НЕДОПУСТИМО):**
 
@@ -3416,7 +3416,7 @@ ${factsDescription}
   // Пробуем разные модели
   for (const model of STORY_MODELS) {
     try {
-      const story = await callModelWithTimeout(model, prompt, 15000);
+      const story = await callModelWithTimeout(model, prompt, 50000);
       return story;
     } catch (error) {
       console.log(`❌ Модель ${model} не ответила:`, error.message);
