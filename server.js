@@ -3837,6 +3837,18 @@ socket.on('changeHealth', ({ gameId, playerId, action, diseaseName, severity }) 
     console.log(`Создатель удалил болезнь у игрока ${targetPlayer.name}`);
   });
 
+
+io.to(gameId).emit('healAttemptResult', {
+    playerName: targetPlayer.name,
+    initiatorName: initiator.name,
+    message: resultMessage,
+    success: !died && selectedOutcome.name !== 'up1',
+    died: died,
+    newHealth: targetPlayer.characteristics?.health?.value,
+    outcome: selectedOutcome.name,
+    experience: exp
+});
+
 // ============ ОБРАБОТЧИКИ ДЛЯ ХАРАКТЕРИСТИК ============
 socket.on('changeCharacteristic', ({ gameId, playerId, characteristic, action, value, index }) => {
   console.log('changeCharacteristic called:', { gameId, playerId, characteristic, action, value, index });
