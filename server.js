@@ -4275,54 +4275,80 @@ socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
             return;
         }
 
-        // Проверяем, есть ли критическая степень
-        const hasCritical = diseases.some(d => d.severity === 'критическая');
+        // Таблица вероятностей (как вы задавали ранее)
+        let outcomes = [];
+        if (exp >= 25 && exp <= 30) {
+            outcomes = [
+                { name: 'full', chance: 50, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 30, label: 'Улучшение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 20, label: 'Улучшение на 1 степень', delta: -1 }
+            ];
+        } else if (exp >= 20 && exp <= 24) {
+            outcomes = [
+                { name: 'full', chance: 30, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 50, label: 'Улучшение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 20, label: 'Улучшение на 1 степень', delta: -1 }
+            ];
+        } else if (exp >= 15 && exp <= 19) {
+            outcomes = [
+                { name: 'full', chance: 10, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 30, label: 'Улучшение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 50, label: 'Улучшение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 10, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        } else if (exp >= 10 && exp <= 14) {
+            outcomes = [
+                { name: 'full', chance: 1, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 15, label: 'Улучшение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 69, label: 'Улучшение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        } else if (exp >= 5 && exp <= 9) {
+            outcomes = [
+                { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 5, label: 'Улучшение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 80, label: 'Улучшение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 15, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        } else { // 1-4
+            outcomes = [
+                { name: 'full', chance: 0, label: 'Полное излечение', delta: -999 },
+                { name: 'down2', chance: 0, label: 'Улучшение на 2 степени', delta: -2 },
+                { name: 'down1', chance: 70, label: 'Улучшение на 1 степень', delta: -1 },
+                { name: 'up1', chance: 30, label: 'Ухудшение на 1 степень', delta: 1 }
+            ];
+        }
 
-        // Получаем шанс по стажу
-        const chance = getHealChance(exp);
-        console.log(`Введённый стаж: ${exp}, шанс успеха: ${chance}%`);
-
-        // Определяем успех
-        const roll = Math.random() * 100;
-        const isSuccess = roll < chance;
-
-        let resultMessage = '';
-        let died = false;
-
-        if (isSuccess) {
-            // Успешное лечение – уменьшаем тяжесть на 1 степень
-            const newHealth = adjustDiseaseSeverity(targetPlayer.characteristics.health.value, -1);
-            if (newHealth === 'Здоров') {
-                resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
-                targetPlayer.characteristics.health.value = 'Здоров';
-            } else {
-                resultMessage = `✅ Успешное лечение! Степень снижена (Стаж ${exp} лет)`;
-                targetPlayer.characteristics.health.value = newHealth;
-            }
-        } else {
-            // Неудачное лечение
-            if (hasCritical) {
-                // Критическая степень + неудача = смерть
-                targetPlayer.status = 'dead';
-                targetPlayer.statusMessage = 'умер при лечении';
-                died = true;
-                resultMessage = `💀 ${targetPlayer.name} не пережил лечение! (Стаж ${exp} лет)`;
-            } else {
-                // Не критическая степень – ухудшение на 1 степень
-                const newHealth = adjustDiseaseSeverity(targetPlayer.characteristics.health.value, 1);
-                if (newHealth === 'DEATH') {
-                    targetPlayer.status = 'dead';
-                    targetPlayer.statusMessage = 'умер от осложнений';
-                    died = true;
-                    resultMessage = `💀 ${targetPlayer.name} умер от осложнений! (Стаж ${exp} лет)`;
-                } else {
-                    resultMessage = `❌ Здоровье ухудшилось на 1 степень! (Стаж ${exp} лет)`;
-                    targetPlayer.characteristics.health.value = newHealth;
-                }
+        const totalChance = outcomes.reduce((acc, o) => acc + o.chance, 0);
+        const roll = Math.random() * totalChance;
+        let cumulative = 0;
+        let selectedOutcome = outcomes[outcomes.length - 1];
+        for (const outcome of outcomes) {
+            cumulative += outcome.chance;
+            if (roll < cumulative) {
+                selectedOutcome = outcome;
+                break;
             }
         }
 
-        // Сохраняем изменения
+        const hasCritical = diseases.some(d => d.severity === 'критическая');
+        let resultMessage = '';
+
+        if (selectedOutcome.name === 'full') {
+            resultMessage = `✅ Полное излечение! (Стаж ${exp} лет)`;
+        } else if (selectedOutcome.name === 'down2') {
+            resultMessage = `✅ Улучшение на 2 степени! (Стаж ${exp} лет)`;
+        } else if (selectedOutcome.name === 'down1') {
+            resultMessage = `✅ Улучшение на 1 степень! (Стаж ${exp} лет)`;
+        } else if (selectedOutcome.name === 'up1') {
+            if (hasCritical) {
+                resultMessage = `❌ Ухудшение на 1 степень! Критическое состояние – возможна смерть! (Стаж ${exp} лет)`;
+            } else {
+                resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
+            }
+        }
+
+        // Сохраняем игру (данные не меняются)
         games.set(gameId, game);
         saveData();
 
@@ -4331,15 +4357,15 @@ socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
             playerName: targetPlayer.name,
             initiatorName: initiator.name,
             message: resultMessage,
-            success: isSuccess && !died,
-            died: died,
-            newHealth: targetPlayer.characteristics?.health?.value,
-            outcome: isSuccess ? 'down1' : (hasCritical ? 'death' : 'up1'),
-            experience: exp
+            success: selectedOutcome.name !== 'up1', // для визуала
+            died: false, // автоматическая смерть отключена
+            outcome: selectedOutcome.name,
+            experience: exp,
+            delta: selectedOutcome.delta // подсказка для ведущего
         });
 
         emitGameUpdateFixed(gameId);
-        console.log(`Лечение: ${initiator.name} -> ${targetPlayer.name}: ${resultMessage}`);
+        console.log(`Лечение (только результат): ${initiator.name} -> ${targetPlayer.name}: ${resultMessage}`);
 
     } catch (error) {
         console.error('❌ Ошибка в attemptHeal:', error);
