@@ -295,12 +295,7 @@ if (!OPENROUTER_API_KEY) {
 
 // Модели для разных целей
 const STORY_MODELS = [
-  'qwen/qwen2.5-7b-instruct:free',
-  'deepseek/deepseek-chat-v3.1',
   'google/gemma-3n-e2b-it:free',  
-  'tng/deepseek-v3-0324:free',
-  'openai/gpt-4o-mini-2024-07-18',
-  'google/gemma-3-4b-it:free',
   'google/gemini-2.0-flash-001',
   'openrouter/free'
 ];
@@ -972,7 +967,7 @@ const GAME_DATA = {
     genders: ['Мужской', 'Женский'],
 
 
-    bodyTypes: ['Легкое', 'Атлетичное', 'Полное', 'Сильное ожирение'],
+    bodyTypes: ['Худое', 'Атлетичное', 'Полное', 'Сильное ожирение'],
 
 
     traits: [
