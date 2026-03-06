@@ -4026,15 +4026,7 @@ socket.on('rerollAllHiddenCharacteristics', ({ gameId }) => {
 });
 
 
-document.getElementById('rerollAllBtn').addEventListener('click', () => {
-    if (!socket || !gameData) {
-        alert('Игра не активна');
-        return;
-    }
-    if (confirm('Вы уверены, что хотите случайным образом изменить все нераскрытые характеристики всех игроков? Это действие нельзя отменить.')) {
-        socket.emit('rerollAllHiddenCharacteristics', { gameId: gameData.gameId });
-    }
-});
+
   // ============ ОБРАБОТЧИКИ ДЛЯ ЗДОРОВЬЯ ============
   socket.on('changeHealth', ({ gameId, playerId, action, diseaseName, severity }) => {
     console.log('changeHealth called:', { gameId, playerId, action, diseaseName, severity });
