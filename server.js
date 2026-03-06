@@ -3644,40 +3644,7 @@ game.players.forEach((player, index) => {
     }
 });
 
-socket.on('activateAbility', ({ gameId }) => {
-    const game = games.get(gameId);
-    if (!game) {
-        socket.emit('error', 'Игра не найдена');
-        return;
-    }
-    const player = game.players.find(p => p.socketId === socket.id);
-    if (!player) {
-        socket.emit('error', 'Игрок не найден');
-        return;
-    }
-    if (!player.secretAbility || player.secretAbility.activated) {
-        socket.emit('error', 'Способность уже активирована или отсутствует');
-        return;
-    }
-    player.secretAbility.activated = true;
 
-    // Добавляем событие в ленту
-    if (!game.events) game.events = [];
-    const eventText = `🃏 ${player.name} активировал скрытую возможность: ${player.secretAbility.value}`;
-    const event = {
-        id: uuidv4(),
-        text: eventText,
-        timestamp: Date.now()
-    };
-    game.events.unshift(event);
-    if (game.events.length > 20) game.events = game.events.slice(0, 20);
-
-    games.set(gameId, game);
-    saveData();
-    io.to(gameId).emit('newEvent', event);
-    emitGameUpdateFixed(gameId);
-    console.log(`Способность активирована игроком ${player.name} в игре ${gameId}`);
-});
 
   socket.on('getGameData', ({ gameId }) => {
     const game = games.get(gameId);
@@ -3741,6 +3708,41 @@ socket.on('activateAbility', ({ gameId }) => {
     io.to(gameId).emit('bunkerUpdated', { bunker: newBunker, totalSlots: game.totalSlots });
     console.log(`Создатель ${initiator.name} изменил бункер (случайно) в игре ${gameId}`);
   });
+
+socket.on('activateAbility', ({ gameId }) => {
+    const game = games.get(gameId);
+    if (!game) {
+        socket.emit('error', 'Игра не найдена');
+        return;
+    }
+    const player = game.players.find(p => p.socketId === socket.id);
+    if (!player) {
+        socket.emit('error', 'Игрок не найден');
+        return;
+    }
+    if (!player.secretAbility || player.secretAbility.activated) {
+        socket.emit('error', 'Способность уже активирована или отсутствует');
+        return;
+    }
+    player.secretAbility.activated = true;
+
+    // Добавляем событие в ленту
+    if (!game.events) game.events = [];
+    const eventText = `🃏 ${player.name} активировал скрытую возможность: ${player.secretAbility.value}`;
+    const event = {
+        id: uuidv4(),
+        text: eventText,
+        timestamp: Date.now()
+    };
+    game.events.unshift(event);
+    if (game.events.length > 20) game.events = game.events.slice(0, 20);
+
+    games.set(gameId, game);
+    saveData();
+    io.to(gameId).emit('newEvent', event);
+    emitGameUpdateFixed(gameId);
+    console.log(`Способность активирована игроком ${player.name} в игре ${gameId}`);
+});
 
   socket.on('revealCharacteristic', ({ gameId, characteristic }) => {
     const game = games.get(gameId);
