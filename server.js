@@ -295,7 +295,6 @@ if (!OPENROUTER_API_KEY) {
 
 // Модели для разных целей
 const STORY_MODELS = [
-  'google/gemma-3n-e2b-it:free',  
   'google/gemini-2.0-flash-001',
   'openrouter/free'
 ];
