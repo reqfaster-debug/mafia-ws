@@ -3570,48 +3570,54 @@ io.on('connection', (socket) => {
   socket.on('startGame', ({ lobbyId }) => {
     const lobby = lobbies.get(lobbyId);
     if (!lobby) {
-      socket.emit('error', 'Лобби не найдено');
-      return;
+        socket.emit('error', 'Лобби не найдено');
+        return;
     }
 
     const player = lobby.players.find(p => p.socketId === socket.id);
     if (!player) {
-      socket.emit('error', 'Игрок не найден в лобби');
-      return;
+        socket.emit('error', 'Игрок не найден в лобби');
+        return;
     }
 
     if (player.id !== lobby.creator) {
-      socket.emit('error', 'Только создатель лобби может начать игру');
-      return;
+        socket.emit('error', 'Только создатель лобби может начать игру');
+        return;
     }
 
     if (lobby.players.length < 4) {
-      socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
-      return;
+        socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
+        return;
     }
 
-    // После создания game, но перед отправкой игрокам
-    const hasHealthy = game.players.some(p => p.characteristics.health.value === 'Здоров');
-    if (!hasHealthy) {
-      // Выбираем случайного игрока и делаем его здоровым
-      const randomIndex = Math.floor(Math.random() * game.players.length);
-      game.players[randomIndex].characteristics.health.value = 'Здоров';
-      console.log(`[HEALTH] No healthy players found. Set ${game.players[randomIndex].name} to healthy.`);
-    }
-
+    // Сначала создаём игру
     const gameId = uuidv4();
     const game = {
-      id: gameId,
-      disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
-      bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
-      players: lobby.players,
-      status: 'active',
-      created: Date.now(),
-      lobbyId: lobbyId,
-      creator: lobby.creator,
-      totalSlots: calculateBunkerSlots(lobby.players.length),
-      bunkerResources: [] // Инициализируем ресурсы бункера
+        id: gameId,
+        disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
+        bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
+        players: lobby.players, // ссылка на тех же игроков
+        status: 'active',
+        created: Date.now(),
+        lobbyId: lobbyId,
+        creator: lobby.creator,
+        totalSlots: calculateBunkerSlots(lobby.players.length),
+        bunkerResources: []
     };
+
+    // Гарантируем наличие хотя бы одного здорового игрока
+    const hasHealthy = game.players.some(p => p.characteristics.health.value === 'Здоров');
+    if (!hasHealthy) {
+        const randomIndex = Math.floor(Math.random() * game.players.length);
+        const luckyPlayer = game.players[randomIndex];
+        luckyPlayer.characteristics.health.value = 'Здоров';
+        // Обновляем в постоянном хранилище
+        const savedPlayer = playersDataMap.get(luckyPlayer.id);
+        if (savedPlayer) {
+            savedPlayer.characteristics.health.value = 'Здоров';
+        }
+        console.log(`[HEALTH] No healthy players found. Set ${luckyPlayer.name} to healthy.`);
+    }
 
     // Инициализируем ресурсы бункера из инвентарей игроков
     initializeBunkerResources(game);
@@ -3619,44 +3625,43 @@ io.on('connection', (socket) => {
     // Раздача уникальных скрытых возможностей
     const shuffledAbilities = [...ABILITY_LIST].sort(() => Math.random() - 0.5);
     game.players.forEach((player, index) => {
-      if (index < shuffledAbilities.length) {
-        player.secretAbility = {
-          value: shuffledAbilities[index],
-          activated: false
-        };
-      } else {
-        player.secretAbility = { value: "Нет способности", activated: false };
-      }
+        if (index < shuffledAbilities.length) {
+            player.secretAbility = {
+                value: shuffledAbilities[index],
+                activated: false
+            };
+        } else {
+            player.secretAbility = { value: "Нет способности", activated: false };
+        }
     });
-
 
     games.set(gameId, game);
     lobby.status = 'game_started';
     lobby.gameId = gameId;
 
     game.players.forEach(player => {
-      playerGameMap.set(player.id, gameId);
+        playerGameMap.set(player.id, gameId);
     });
 
     game.players.forEach(player => {
-      const playerSocket = io.sockets.sockets.get(player.socketId);
-      if (playerSocket) {
-        playerSocket.join(gameId);
-      }
+        const playerSocket = io.sockets.sockets.get(player.socketId);
+        if (playerSocket) {
+            playerSocket.join(gameId);
+        }
 
-      io.to(player.socketId).emit('gameStarted', {
-        gameId: game.id,
-        disaster: game.disaster,
-        bunker: game.bunker,
-        totalSlots: game.totalSlots,
-        player: player,
-        players: game.players,
-        isCreator: player.id === lobby.creator,
-        creatorId: game.creator,
-        bunkerResources: game.bunkerResources
-      });
+        io.to(player.socketId).emit('gameStarted', {
+            gameId: game.id,
+            disaster: game.disaster,
+            bunker: game.bunker,
+            totalSlots: game.totalSlots,
+            player: player,
+            players: game.players,
+            isCreator: player.id === lobby.creator,
+            creatorId: game.creator,
+            bunkerResources: game.bunkerResources
+        });
     });
-  });
+});
 
 
 
