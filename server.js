@@ -3955,9 +3955,9 @@ io.on('connection', (socket) => {
 
 
 
-socket.on('rerollAllHiddenCharacteristics', ({ gameId }) => {
+socket.on('rerollAllCharacteristics', ({ gameId }) => {
   try {
-    console.log(`[rerollAll] Запрос от создателя на перегенерацию всех скрытых характеристик для игры ${gameId}`);
+    console.log(`[rerollAll] Запрос от создателя на ПЕРЕГЕНЕРАЦИЮ ВСЕХ характеристик для игры ${gameId}`);
 
     const game = games.get(gameId);
     if (!game) {
@@ -3976,22 +3976,21 @@ socket.on('rerollAllHiddenCharacteristics', ({ gameId }) => {
       // Перебираем все характеристики
       Object.keys(player.characteristics).forEach(charKey => {
         const char = player.characteristics[charKey];
-        // Если характеристика не раскрыта, генерируем новое значение
-        if (!char.revealed) {
-          const newValue = getRandomValue(charKey, player, true);
-          if (newValue) {
-            char.value = newValue;
-          }
+        // Генерируем новое значение (учитывая уникальность среди текущих характеристик этого игрока)
+        const newValue = getRandomValue(charKey, player, true);
+        if (newValue) {
+          char.value = newValue;
         }
+        // Сбрасываем флаг раскрытия
+        char.revealed = false;
       });
 
       // Обновляем сохранённые данные игрока
       const savedPlayer = playersDataMap.get(player.id);
       if (savedPlayer) {
         Object.keys(savedPlayer.characteristics).forEach(charKey => {
-          if (!savedPlayer.characteristics[charKey].revealed) {
-            savedPlayer.characteristics[charKey].value = player.characteristics[charKey].value;
-          }
+          savedPlayer.characteristics[charKey].value = player.characteristics[charKey].value;
+          savedPlayer.characteristics[charKey].revealed = false;
         });
       }
     });
@@ -4005,7 +4004,7 @@ socket.on('rerollAllHiddenCharacteristics', ({ gameId }) => {
     if (!game.events) game.events = [];
     const event = {
       id: uuidv4(),
-      text: `🔄 Создатель перемешал все нераскрытые характеристики игроков`,
+      text: `🔄 Создатель полностью перемешал ВСЕ характеристики игроков (все сброшены и скрыты)`,
       timestamp: Date.now()
     };
     game.events.unshift(event);
@@ -4018,7 +4017,7 @@ socket.on('rerollAllHiddenCharacteristics', ({ gameId }) => {
     // Отправляем обновление всем
     emitGameUpdateFixed(gameId);
 
-    console.log(`[rerollAll] Характеристики успешно перегенерированы для игры ${gameId}`);
+    console.log(`[rerollAll] Все характеристики успешно перегенерированы для игры ${gameId}`);
   } catch (error) {
     console.error('[rerollAll] Ошибка:', error);
     socket.emit('error', 'Внутренняя ошибка сервера');
