@@ -295,24 +295,19 @@ if (!OPENROUTER_API_KEY) {
 
 // Модели для разных целей
 const STORY_MODELS = [
+  'qwen/qwen2.5-7b-instruct:free',
   'deepseek/deepseek-chat-v3.1',
-  'google/gemma-3:free',
+  'google/gemma-3n-e2b-it:free',  
   'tng/deepseek-v3-0324:free',
   'openai/gpt-4o-mini-2024-07-18',
-  'tng/deepseek-r1t2-chimera:free',
-  'meta-llama/llama-4-maverick:free',
-  'mistralai/mistral-small-3.2:free',
-  'xai/grok-4.1-fast:free',
-  'qwen/qwen3-32b:free',
-  'qwen/qwen3.5-flash-02-23',
-  'x-ai/grok-4',
+  'google/gemma-3-4b-it:free',
   'google/gemini-2.0-flash-001',
   'openrouter/free'
 ];
 
 
 // Функция для вызова нейросети с таймаутом
-async function callModelWithTimeout(model, prompt, timeoutMs = 40000) {
+async function callModelWithTimeout(model, prompt, timeoutMs = 20000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -3353,16 +3348,20 @@ app.post('/api/generate-final', async (req, res) => {
     console.log('[FINAL] Generating final for game', gameId);
     console.log('[FINAL] Prompt length:', prompt.length);
     let finalText = null;
-    for (const model of STORY_MODELS) {
-      try {
-        console.log('[FINAL] Trying model:', model);
-        finalText = await callModelWithTimeout(model, prompt, 20000); // уменьшил до 20 сек
-        console.log('[FINAL] Model', model, 'returned:', finalText ? 'text length ' + finalText.length : 'empty');
-        if (finalText && finalText.trim()) break;
-      } catch (error) {
-        console.error(`[FINAL] Model ${model} error:`, error.message);
-      }
+for (const model of STORY_MODELS) {
+  try {
+    console.log(`[FINAL] Trying model: ${model}`);
+    finalText = await callModelWithTimeout(model, prompt, 20000);
+    if (finalText && finalText.trim()) {
+      console.log(`[FINAL] Model ${model} returned: ${finalText.length} chars`);
+      break;
     }
+  } catch (error) {
+    console.error(`[FINAL] Model ${model} error:`, error.message);
+    // Небольшая задержка перед следующей моделью
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
     if (!finalText || !finalText.trim()) {
       finalText = `Группа провела ${game.bunker.duration_years} лет в бункере. Несмотря на все усилия, ресурсы иссякли, и никто не выжил. Конец.`;
       console.log('[FINAL] Using fallback text');
@@ -3567,143 +3566,143 @@ io.on('connection', (socket) => {
     console.log('Новый игрок присоединился:', playerName);
   });
 
-socket.on('startGame', async ({ lobbyId }) => {
+  socket.on('startGame', async ({ lobbyId }) => {
     try {
-        console.log(`[startGame] Попытка запуска игры для лобби ${lobbyId} от сокета ${socket.id}`);
+      console.log(`[startGame] Попытка запуска игры для лобби ${lobbyId} от сокета ${socket.id}`);
 
-        const lobby = lobbies.get(lobbyId);
-        if (!lobby) {
-            console.log(`[startGame] Лобби ${lobbyId} не найдено`);
-            socket.emit('error', 'Лобби не найдено');
-            return;
+      const lobby = lobbies.get(lobbyId);
+      if (!lobby) {
+        console.log(`[startGame] Лобби ${lobbyId} не найдено`);
+        socket.emit('error', 'Лобби не найдено');
+        return;
+      }
+
+      const player = lobby.players.find(p => p.socketId === socket.id);
+      if (!player) {
+        console.log(`[startGame] Игрок с сокетом ${socket.id} не найден в лобби`);
+        socket.emit('error', 'Игрок не найден в лобби');
+        return;
+      }
+
+      if (player.id !== lobby.creator) {
+        console.log(`[startGame] Игрок ${player.name} не является создателем`);
+        socket.emit('error', 'Только создатель лобби может начать игру');
+        return;
+      }
+
+      if (lobby.players.length < 4) {
+        console.log(`[startGame] Недостаточно игроков: ${lobby.players.length}`);
+        socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
+        return;
+      }
+
+      // Создаём игру
+      const gameId = uuidv4();
+      console.log(`[startGame] Создаём игру ${gameId}`);
+
+      const game = {
+        id: gameId,
+        disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
+        bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
+        players: lobby.players, // ссылка на тех же игроков
+        status: 'active',
+        created: Date.now(),
+        lobbyId: lobbyId,
+        creator: lobby.creator,
+        totalSlots: calculateBunkerSlots(lobby.players.length),
+        bunkerResources: []
+      };
+
+      console.log(`[startGame] Игроков в игре: ${game.players.length}`);
+
+      // Гарантируем наличие хотя бы одного здорового игрока
+      const hasHealthy = game.players.some(p => p.characteristics.health.value === 'Здоров');
+      if (!hasHealthy) {
+        const randomIndex = Math.floor(Math.random() * game.players.length);
+        const luckyPlayer = game.players[randomIndex];
+        luckyPlayer.characteristics.health.value = 'Здоров';
+        // Обновляем в постоянном хранилище
+        const savedPlayer = playersDataMap.get(luckyPlayer.id);
+        if (savedPlayer) {
+          savedPlayer.characteristics.health.value = 'Здоров';
         }
+        console.log(`[startGame] Установлено здоровье для ${luckyPlayer.name} (был единственным здоровым)`);
+      }
 
-        const player = lobby.players.find(p => p.socketId === socket.id);
-        if (!player) {
-            console.log(`[startGame] Игрок с сокетом ${socket.id} не найден в лобби`);
-            socket.emit('error', 'Игрок не найден в лобби');
-            return;
-        }
+      // Инициализируем ресурсы бункера из инвентарей игроков
+      if (typeof initializeBunkerResources === 'function') {
+        initializeBunkerResources(game);
+        console.log(`[startGame] Ресурсы бункера: ${game.bunkerResources.length} предметов`);
+      } else {
+        console.warn('[startGame] initializeBunkerResources не определена');
+      }
 
-        if (player.id !== lobby.creator) {
-            console.log(`[startGame] Игрок ${player.name} не является создателем`);
-            socket.emit('error', 'Только создатель лобби может начать игру');
-            return;
-        }
-
-        if (lobby.players.length < 4) {
-            console.log(`[startGame] Недостаточно игроков: ${lobby.players.length}`);
-            socket.emit('error', 'Недостаточно игроков (нужно минимум 4)');
-            return;
-        }
-
-        // Создаём игру
-        const gameId = uuidv4();
-        console.log(`[startGame] Создаём игру ${gameId}`);
-
-        const game = {
-            id: gameId,
-            disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
-            bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
-            players: lobby.players, // ссылка на тех же игроков
-            status: 'active',
-            created: Date.now(),
-            lobbyId: lobbyId,
-            creator: lobby.creator,
-            totalSlots: calculateBunkerSlots(lobby.players.length),
-            bunkerResources: []
-        };
-
-        console.log(`[startGame] Игроков в игре: ${game.players.length}`);
-
-        // Гарантируем наличие хотя бы одного здорового игрока
-        const hasHealthy = game.players.some(p => p.characteristics.health.value === 'Здоров');
-        if (!hasHealthy) {
-            const randomIndex = Math.floor(Math.random() * game.players.length);
-            const luckyPlayer = game.players[randomIndex];
-            luckyPlayer.characteristics.health.value = 'Здоров';
-            // Обновляем в постоянном хранилище
-            const savedPlayer = playersDataMap.get(luckyPlayer.id);
-            if (savedPlayer) {
-                savedPlayer.characteristics.health.value = 'Здоров';
-            }
-            console.log(`[startGame] Установлено здоровье для ${luckyPlayer.name} (был единственным здоровым)`);
-        }
-
-        // Инициализируем ресурсы бункера из инвентарей игроков
-        if (typeof initializeBunkerResources === 'function') {
-            initializeBunkerResources(game);
-            console.log(`[startGame] Ресурсы бункера: ${game.bunkerResources.length} предметов`);
-        } else {
-            console.warn('[startGame] initializeBunkerResources не определена');
-        }
-
-        // Раздача уникальных скрытых возможностей
-        if (Array.isArray(ABILITY_LIST) && ABILITY_LIST.length > 0) {
-            const shuffledAbilities = [...ABILITY_LIST].sort(() => Math.random() - 0.5);
-            game.players.forEach((player, index) => {
-                if (index < shuffledAbilities.length) {
-                    player.secretAbility = {
-                        value: shuffledAbilities[index],
-                        activated: false
-                    };
-                } else {
-                    player.secretAbility = { value: "Нет способности", activated: false };
-                }
-            });
-        } else {
-            console.warn('[startGame] ABILITY_LIST пуст или не определён');
-            game.players.forEach(player => {
-                player.secretAbility = { value: "Нет способности", activated: false };
-            });
-        }
-
-        // Сохраняем игру
-        games.set(gameId, game);
-        lobby.status = 'game_started';
-        lobby.gameId = gameId;
-
-        // Обновляем карту игроков
-        game.players.forEach(player => {
-            playerGameMap.set(player.id, gameId);
+      // Раздача уникальных скрытых возможностей
+      if (Array.isArray(ABILITY_LIST) && ABILITY_LIST.length > 0) {
+        const shuffledAbilities = [...ABILITY_LIST].sort(() => Math.random() - 0.5);
+        game.players.forEach((player, index) => {
+          if (index < shuffledAbilities.length) {
+            player.secretAbility = {
+              value: shuffledAbilities[index],
+              activated: false
+            };
+          } else {
+            player.secretAbility = { value: "Нет способности", activated: false };
+          }
         });
-
-        // Отправляем уведомления всем игрокам
+      } else {
+        console.warn('[startGame] ABILITY_LIST пуст или не определён');
         game.players.forEach(player => {
-            const playerSocket = io.sockets.sockets.get(player.socketId);
-            if (playerSocket) {
-                playerSocket.join(gameId);
-            }
-
-            io.to(player.socketId).emit('gameStarted', {
-                gameId: game.id,
-                disaster: game.disaster,
-                bunker: game.bunker,
-                totalSlots: game.totalSlots,
-                player: player,
-                players: game.players,
-                isCreator: player.id === lobby.creator,
-                creatorId: game.creator,
-                bunkerResources: game.bunkerResources
-            });
+          player.secretAbility = { value: "Нет способности", activated: false };
         });
+      }
 
-        // Сохраняем данные
-        try {
-            await saveData();
-            console.log(`[startGame] Данные сохранены для игры ${gameId}`);
-        } catch (saveErr) {
-            console.error('[startGame] Ошибка сохранения данных:', saveErr);
+      // Сохраняем игру
+      games.set(gameId, game);
+      lobby.status = 'game_started';
+      lobby.gameId = gameId;
+
+      // Обновляем карту игроков
+      game.players.forEach(player => {
+        playerGameMap.set(player.id, gameId);
+      });
+
+      // Отправляем уведомления всем игрокам
+      game.players.forEach(player => {
+        const playerSocket = io.sockets.sockets.get(player.socketId);
+        if (playerSocket) {
+          playerSocket.join(gameId);
         }
 
-        console.log(`[startGame] Игра ${gameId} успешно запущена`);
+        io.to(player.socketId).emit('gameStarted', {
+          gameId: game.id,
+          disaster: game.disaster,
+          bunker: game.bunker,
+          totalSlots: game.totalSlots,
+          player: player,
+          players: game.players,
+          isCreator: player.id === lobby.creator,
+          creatorId: game.creator,
+          bunkerResources: game.bunkerResources
+        });
+      });
+
+      // Сохраняем данные
+      try {
+        await saveData();
+        console.log(`[startGame] Данные сохранены для игры ${gameId}`);
+      } catch (saveErr) {
+        console.error('[startGame] Ошибка сохранения данных:', saveErr);
+      }
+
+      console.log(`[startGame] Игра ${gameId} успешно запущена`);
 
     } catch (error) {
-        console.error(`[startGame] КРИТИЧЕСКАЯ ОШИБКА:`, error);
-        console.error(error.stack);
-        socket.emit('error', 'Внутренняя ошибка сервера при запуске игры');
+      console.error(`[startGame] КРИТИЧЕСКАЯ ОШИБКА:`, error);
+      console.error(error.stack);
+      socket.emit('error', 'Внутренняя ошибка сервера при запуске игры');
     }
-});
+  });
 
 
 
