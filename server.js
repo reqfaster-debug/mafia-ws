@@ -3078,7 +3078,7 @@ io.on('connection', (socket) => {
     player.secretAbility.activated = true;
 
     if (!game.events) game.events = [];
-    const eventText = `🃏 ${player.name} активировал скрытую возможность: ${player.secretAbility.value}`;
+    const eventText = `🃏 ${player.name} активировал способность ${player.secretAbility.value}`;
     const event = {
       id: uuidv4(),
       text: eventText,
