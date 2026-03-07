@@ -1229,233 +1229,242 @@ const GAME_DATA = {
 
 
 
-    health: [
-      // Общие (для терапевта)
-      { name: 'Здоров' },
-      { name: 'Здоров' },
-      { name: 'Анемия' },
-      { name: 'Авитаминоз' },
+health: [
+      // ========== ОБЩИЕ (могут быть у всех) ==========
+      { name: 'Здоров', gender: 'any' },
+      { name: 'Анемия', gender: 'any' },
+      { name: 'Авитаминоз', gender: 'any' },
 
-      // Кардиолог (сердечно-сосудистые)
-      { name: 'Гипертония' },
-      { name: 'Гипотония' },
-      { name: 'Аритмия' },
-      { name: 'Тахикардия' },
-      { name: 'Брадикардия' },
-      { name: 'Ишемия' },
-      { name: 'Стенокардия' },
-      { name: 'Атеросклероз' },
-      { name: 'Варикоз' },
-      { name: 'Тромбоз' },
-      { name: 'Порок сердца' },
-      { name: 'Кардиомиопатия' },
+      // ========== КАРДИОЛОГИЯ (все общие) ==========
+      { name: 'Гипертония', gender: 'any' },
+      { name: 'Гипотония', gender: 'any' },
+      { name: 'Аритмия', gender: 'any' },
+      { name: 'Тахикардия', gender: 'any' },
+      { name: 'Брадикардия', gender: 'any' },
+      { name: 'Ишемия', gender: 'any' },
+      { name: 'Стенокардия', gender: 'any' },
+      { name: 'Инфаркт', gender: 'any' },
+      { name: 'Инсульт', gender: 'any' },
+      { name: 'Атеросклероз', gender: 'any' },
+      { name: 'Варикоз', gender: 'any' },      // чаще у женщин, но бывает у всех
+      { name: 'Тромбоз', gender: 'any' },
+      { name: 'Порок сердца', gender: 'any' },
+      { name: 'Кардиомиопатия', gender: 'any' },
 
-      // Онколог (онкология)
-      { name: 'Онкология' },
-      { name: 'Рак легких' },
-      { name: 'Рак желудка' },
-      { name: 'Рак печени' },
-      { name: 'Рак поджелудочной' },
-      { name: 'Рак кишечника' },
-      { name: 'Рак молочной железы' },
-      { name: 'Рак простаты' },
-      { name: 'Лейкоз' },
-      { name: 'Лимфома' },
-      { name: 'Меланома' },
-      { name: 'Саркома' },
-      { name: 'Глиобластома' },
+      // ========== ОНКОЛОГИЯ ==========
+      { name: 'Онкология', gender: 'any' },             // общее название
+      { name: 'Рак легких', gender: 'any' },
+      { name: 'Рак желудка', gender: 'any' },
+      { name: 'Рак печени', gender: 'any' },
+      { name: 'Рак поджелудочной', gender: 'any' },
+      { name: 'Рак кишечника', gender: 'any' },
+      { name: 'Рак молочной железы', gender: 'female' }, // преимущественно женский
+      { name: 'Рак простаты', gender: 'male' },          // только мужчины
+      { name: 'Лейкоз', gender: 'any' },
+      { name: 'Лимфома', gender: 'any' },
+      { name: 'Меланома', gender: 'any' },
+      { name: 'Саркома', gender: 'any' },
+      { name: 'Глиобластома', gender: 'any' },
 
+      // ========== НЕВРОЛОГИЯ (все общие) ==========
+      { name: 'Эпилепсия', gender: 'any' },
+      { name: 'Мигрень', gender: 'any' },               // чаще у женщин
+      { name: 'Невралгия', gender: 'any' },
+      { name: 'Неврит', gender: 'any' },
+      { name: 'Радикулит', gender: 'any' },
+      { name: 'Остеохондроз', gender: 'any' },
+      { name: 'Грыжа', gender: 'any' },
+      { name: 'Паркинсон', gender: 'any' },
+      { name: 'Рассеянный склероз', gender: 'any' },    // чаще у женщин
+      { name: 'Болезнь Альцгеймера', gender: 'any' },
+      { name: 'Менингит', gender: 'any' },
+      { name: 'Энцефалит', gender: 'any' },
+      { name: 'Невропатия', gender: 'any' },
+      { name: 'Синдром Туретта', gender: 'any' },
 
-      // Невролог (неврологические)
-      { name: 'Эпилепсия' },
-      { name: 'Мигрень' },
-      { name: 'Невралгия' },
-      { name: 'Неврит' },
-      { name: 'Радикулит' },
-      { name: 'Остеохондроз' },
-      { name: 'Грыжа' },
-      { name: 'Паркинсон' },
-      { name: 'Рассеянный склероз' },
-      { name: 'Болезнь Альцгеймера' },
-      { name: 'Менингит' },
-      { name: 'Энцефалит' },
-      { name: 'Невропатия' },
-      { name: 'Синдром Туретта' },
+      // ========== ИНФЕКЦИИ (все общие) ==========
+      { name: 'Туберкулез', gender: 'any' },
+      { name: 'Гепатит A', gender: 'any' },
+      { name: 'Гепатит B', gender: 'any' },
+      { name: 'Гепатит C', gender: 'any' },
+      { name: 'ВИЧ', gender: 'any' },
+      { name: 'СПИД', gender: 'any' },
+      { name: 'Пневмония', gender: 'any' },
+      { name: 'Бронхит', gender: 'any' },
+      { name: 'Ангина', gender: 'any' },
+      { name: 'Грипп', gender: 'any' },
+      { name: 'ОРВИ', gender: 'any' },
+      { name: 'Корь', gender: 'any' },
+      { name: 'Краснуха', gender: 'any' },
+      { name: 'Ветрянка', gender: 'any' },
+      { name: 'Свинка', gender: 'any' },
+      { name: 'Коклюш', gender: 'any' },
+      { name: 'Дифтерия', gender: 'any' },
+      { name: 'Скарлатина', gender: 'any' },
+      { name: 'Малярия', gender: 'any' },
+      { name: 'Тиф', gender: 'any' },
+      { name: 'Холера', gender: 'any' },
+      { name: 'Чума', gender: 'any' },
+      { name: 'Сибирская язва', gender: 'any' },
+      { name: 'Бешенство', gender: 'any' },
+      { name: 'Столбняк', gender: 'any' },
+      { name: 'Ботулизм', gender: 'any' },
+      { name: 'Сальмонеллез', gender: 'any' },
+      { name: 'Дизентерия', gender: 'any' },
+      { name: 'Глисты', gender: 'any' },
+      { name: 'Аскаридоз', gender: 'any' },
 
-      // Эпидемиолог/Инфекционист/Вирусолог (инфекционные)
-      { name: 'Туберкулез' },
-      { name: 'Гепатит A' },
-      { name: 'Гепатит B' },
-      { name: 'Гепатит C' },
-      { name: 'ВИЧ' },
-      { name: 'СПИД' },
-      { name: 'Пневмония' },
-      { name: 'Бронхит' },
-      { name: 'Ангина' },
-      { name: 'Грипп' },
-      { name: 'ОРВИ' },
-      { name: 'Корь' },
-      { name: 'Краснуха' },
-      { name: 'Ветрянка' },
-      { name: 'Свинка' },
-      { name: 'Коклюш' },
-      { name: 'Дифтерия' },
-      { name: 'Скарлатина' },
-      { name: 'Малярия' },
-      { name: 'Тиф' },
-      { name: 'Холера' },
-      { name: 'Чума' },
-      { name: 'Сибирская язва' },
-      { name: 'Бешенство' },
-      { name: 'Столбняк' },
-      { name: 'Ботулизм' },
-      { name: 'Сальмонеллез' },
-      { name: 'Дизентерия' },
-      { name: 'Глисты' },
-      { name: 'Аскаридоз' },
+      // ========== ИММУНОЛОГИЯ (все общие) ==========
+      { name: 'Аллергия', gender: 'any' },
+      { name: 'Астма', gender: 'any' },
+      { name: 'Поллиноз', gender: 'any' },
+      { name: 'Крапивница', gender: 'any' },
+      { name: 'Отек Квинке', gender: 'any' },
+      { name: 'Анафилаксия', gender: 'any' },
+      { name: 'Экзема', gender: 'any' },
+      { name: 'Волчанка', gender: 'any' },               // чаще у женщин
+      { name: 'Ревматоидный артрит', gender: 'any' },
+      { name: 'Склеродермия', gender: 'any' },           // чаще у женщин
+      { name: 'Синдром Шегрена', gender: 'any' },        // чаще у женщин
+      { name: 'Болезнь Крона', gender: 'any' },
+      { name: 'Язвенный колит', gender: 'any' },
 
-      // Иммунолог (аутоиммунные и аллергии)
-      { name: 'Аллергия' },
-      { name: 'Астма' },
-      { name: 'Поллиноз' },
-      { name: 'Крапивница' },
-      { name: 'Отек Квинке' },
-      { name: 'Анафилаксия' },
-      { name: 'Экзема' },
-      { name: 'Волчанка' },
-      { name: 'Ревматоидный артрит' },
-      { name: 'Склеродермия' },
-      { name: 'Синдром Шегрена' },
-      { name: 'Болезнь Крона' },
-      { name: 'Язвенный колит' },
+      // ========== ДЕРМАТОЛОГИЯ (все общие) ==========
+      { name: 'Псориаз', gender: 'any' },
+      { name: 'Дерматит', gender: 'any' },
+      { name: 'Нейродермит', gender: 'any' },
+      { name: 'Себорея', gender: 'any' },
+      { name: 'Акне', gender: 'any' },
+      { name: 'Фурункулез', gender: 'any' },
+      { name: 'Карбункул', gender: 'any' },
+      { name: 'Абсцесс', gender: 'any' },
+      { name: 'Флегмона', gender: 'any' },
+      { name: 'Рожа', gender: 'any' },
+      { name: 'Грибок', gender: 'any' },
+      { name: 'Лишай', gender: 'any' },
+      { name: 'Чесотка', gender: 'any' },
+      { name: 'Педикулез', gender: 'any' },
+      { name: 'Ожог', gender: 'any' },
+      { name: 'Обморожение', gender: 'any' },
 
-      // Дерматолог (кожные)
-      { name: 'Псориаз' },
-      { name: 'Дерматит' },
-      { name: 'Нейродермит' },
-      { name: 'Себорея' },
-      { name: 'Акне' },
-      { name: 'Фурункулез' },
-      { name: 'Карбункул' },
-      { name: 'Абсцесс' },
-      { name: 'Флегмона' },
-      { name: 'Рожа' },
-      { name: 'Грибок' },
-      { name: 'Лишай' },
-      { name: 'Чесотка' },
-      { name: 'Педикулез' },
-      { name: 'Ожог' },
-      { name: 'Обморожение' },
+      // ========== ТРАВМАТОЛОГИЯ (все общие) ==========
+      { name: 'Перелом', gender: 'any' },
+      { name: 'Вывих', gender: 'any' },
+      { name: 'Растяжение', gender: 'any' },
+      { name: 'Разрыв связок', gender: 'any' },
+      { name: 'Гематома', gender: 'any' },
+      { name: 'Рваная рана', gender: 'any' },
+      { name: 'Резаная рана', gender: 'any' },
+      { name: 'Колотая рана', gender: 'any' },
+      { name: 'Огнестрельное ранение', gender: 'any' },
+      { name: 'Сотрясение мозга', gender: 'any' },
+      { name: 'Черепно-мозговая травма', gender: 'any' },
+      { name: 'Повреждение мениска', gender: 'any' },
+      { name: 'Разрыв мышцы', gender: 'any' },
 
-      // Травматолог (травмы)
-      { name: 'Перелом' },
-      { name: 'Разрыв связок' },
-      { name: 'Рваная рана' },
-      { name: 'Резаная рана' },
-      { name: 'Колотая рана' },
-      { name: 'Огнестрельное ранение' },
-      { name: 'Черепно-мозговая травма' },
-      { name: 'Повреждение мениска' },
+      // ========== ОФТАЛЬМОЛОГИЯ (все общие) ==========
+      { name: 'Катаракта', gender: 'any' },
+      { name: 'Глаукома', gender: 'any' },
+      { name: 'Конъюнктивит', gender: 'any' },
+      { name: 'Блефарит', gender: 'any' },
+      { name: 'Ячмень', gender: 'any' },
+      { name: 'Кератит', gender: 'any' },
+      { name: 'Близорукость', gender: 'any' },
+      { name: 'Дальнозоркость', gender: 'any' },
+      { name: 'Астигматизм', gender: 'any' },
+      { name: 'Косоглазие', gender: 'any' },
+      { name: 'Отслоение сетчатки', gender: 'any' },
 
+      // ========== ГИНЕКОЛОГИЯ / УРОЛОГИЯ ==========
+      { name: 'Эндометриоз', gender: 'female' },
+      { name: 'Миома матки', gender: 'female' },
+      { name: 'Киста яичника', gender: 'female' },
+      { name: 'Полип', gender: 'any' },                // может быть в разных местах
+      { name: 'Воспаление придатков', gender: 'female' },
+      { name: 'Молочница', gender: 'female' },         // у мужчин бывает крайне редко
+      { name: 'Бактериальный вагиноз', gender: 'female' },
+      { name: 'Герпес генитальный', gender: 'any' },
+      { name: 'Папилломавирус', gender: 'any' },
+      { name: 'Бесплодие', gender: 'any' },
+      { name: 'Импотенция', gender: 'male' },
+      { name: 'Простатит', gender: 'male' },
+      { name: 'Аденома простаты', gender: 'male' },
+      { name: 'Орхит', gender: 'male' },               // воспаление яичка
+      { name: 'Эпидидимит', gender: 'male' },          // воспаление придатка яичка
+      { name: 'Уретрит', gender: 'any' },
+      { name: 'Цистит', gender: 'any' },               // чаще у женщин, но бывает у мужчин
+      { name: 'Пиелонефрит', gender: 'any' },
 
-      // Офтальмолог (глазные)
-      { name: 'Катаракта' },
-      { name: 'Глаукома' },
-      { name: 'Конъюнктивит' },
-      { name: 'Блефарит' },
-      { name: 'Ячмень' },
-      { name: 'Кератит' },
-      { name: 'Близорукость' },
-      { name: 'Дальнозоркость' },
-      { name: 'Астигматизм' },
-      { name: 'Косоглазие' },
-      { name: 'Отслоение сетчатки' },
+      // ========== ГАСТРОЭНТЕРОЛОГИЯ (все общие) ==========
+      { name: 'Гастрит', gender: 'any' },
+      { name: 'Язва', gender: 'any' },
+      { name: 'Гастродуоденит', gender: 'any' },
+      { name: 'Панкреатит', gender: 'any' },
+      { name: 'Холецистит', gender: 'any' },
+      { name: 'Желчекаменная болезнь', gender: 'any' }, // чаще у женщин
+      { name: 'Колит', gender: 'any' },
+      { name: 'Энтерит', gender: 'any' },
+      { name: 'Дисбактериоз', gender: 'any' },
+      { name: 'Изжога', gender: 'any' },
+      { name: 'Рефлюкс', gender: 'any' },
+      { name: 'Запор', gender: 'any' },
+      { name: 'Диарея', gender: 'any' },
+      { name: 'Геморрой', gender: 'any' },
+      { name: 'Анальная трещина', gender: 'any' },
 
-      // Гинеколог (половая сфера)
-      { name: 'Эндометриоз' },
-      { name: 'Миома матки' },
-      { name: 'Киста яичника' },
-      { name: 'Полип' },
-      { name: 'Воспаление придатков' },
-      { name: 'Молочница' },
-      { name: 'Бактериальный вагиноз' },
-      { name: 'Герпес генитальный' },
-      { name: 'Папилломавирус' },
-      { name: 'Бесплодие' },
-      { name: 'Импотенция' },
-      { name: 'Простатит' },
-      { name: 'Аденома простаты' },
-      { name: 'Орхит' },
-      { name: 'Эпидидимит' },
-      { name: 'Уретрит' },
-      { name: 'Цистит' },
-      { name: 'Пиелонефрит' },
+      // ========== ПСИХИАТРИЯ (все общие) ==========
+      { name: 'Депрессия', gender: 'any' },
+      { name: 'Тревожность', gender: 'any' },
+      { name: 'Панические атаки', gender: 'any' },
+      { name: 'ПТСР', gender: 'any' },
+      { name: 'Шизофрения', gender: 'any' },
+      { name: 'Биполярное расстройство', gender: 'any' },
+      { name: 'Невроз', gender: 'any' },
+      { name: 'Истерия', gender: 'any' },               // исторически чаще у женщин
+      { name: 'Паранойя', gender: 'any' },
+      { name: 'Деменция', gender: 'any' },
+      { name: 'Галлюцинации', gender: 'any' },
+      { name: 'Бред', gender: 'any' },
+      { name: 'ОКР', gender: 'any' },
+      { name: 'Анорексия', gender: 'any' },             // чаще у женщин
+      { name: 'Булимия', gender: 'any' },               // чаще у женщин
+      { name: 'Бессонница', gender: 'any' },
+      { name: 'Лунатизм', gender: 'any' },
 
-      // Гастроэнтеролог (ЖКТ)
-      { name: 'Гастрит' },
-      { name: 'Язва' },
-      { name: 'Гастродуоденит' },
-      { name: 'Панкреатит' },
-      { name: 'Холецистит' },
-      { name: 'Желчекаменная болезнь' },
-      { name: 'Колит' },
-      { name: 'Энтерит' },
-      { name: 'Дисбактериоз' },
-      { name: 'Изжога' },
-      { name: 'Рефлюкс' },
-      { name: 'Запор' },
-      { name: 'Диарея' },
-      { name: 'Геморрой' },
+      // ========== ЛОР (все общие) ==========
+      { name: 'Отит', gender: 'any' },
+      { name: 'Синусит', gender: 'any' },
+      { name: 'Гайморит', gender: 'any' },
+      { name: 'Фронтит', gender: 'any' },
+      { name: 'Ринит', gender: 'any' },
+      { name: 'Фарингит', gender: 'any' },
+      { name: 'Ларингит', gender: 'any' },
+      { name: 'Тонзиллит', gender: 'any' },
+      { name: 'Аденоиды', gender: 'any' },
+      { name: 'Тугоухость', gender: 'any' },
+      { name: 'Глухота', gender: 'any' },
+      { name: 'Потеря голоса', gender: 'any' },
 
-
-      // Психиатр (психические)
-      { name: 'Панические атаки' },
-      { name: 'ПТСР' },
-      { name: 'Шизофрения' },
-      { name: 'Биполярное расстройство' },
-      { name: 'Невроз' },
-      { name: 'Истерия' },
-      { name: 'Паранойя' },
-      { name: 'Деменция' },
-      { name: 'Галлюцинации' },
-      { name: 'Бред' },
-      { name: 'Анорексия' },
-      { name: 'Булимия' },
-      { name: 'Бессонница' },
-      { name: 'Лунатизм' },
-
-
-      // ЛОР
-      { name: 'Отит' },
-      { name: 'Синусит' },
-      { name: 'Гайморит' },
-      { name: 'Фронтит' },
-      { name: 'Ринит' },
-      { name: 'Фарингит' },
-      { name: 'Ларингит' },
-      { name: 'Тонзиллит' },
-      { name: 'Аденоиды' },
-      { name: 'Тугоухость' },
-      { name: 'Глухота' },
-      { name: 'Потеря голоса' },
-
-
-      // Прочие
-      { name: 'Радиационное поражение' },
-      { name: 'Лучевая болезнь' },
-      { name: 'Отравление' },
-      { name: 'Интоксикация' },
-      { name: 'Сепсис' },
-      { name: 'Заражение крови' },
-      { name: 'Гангрена' },
-      { name: 'Некроз' },
-      { name: 'Фимоз' },
-      { name: 'Парафимоз' },
-      { name: 'Водянка' },
-      { name: 'Асцит' },
-      { name: 'Подагра' },
-      { name: 'Ревматизм' }
+      // ========== ПРОЧИЕ ==========
+      { name: 'Радиационное поражение', gender: 'any' },
+      { name: 'Лучевая болезнь', gender: 'any' },
+      { name: 'Отравление', gender: 'any' },
+      { name: 'Интоксикация', gender: 'any' },
+      { name: 'Сепсис', gender: 'any' },
+      { name: 'Заражение крови', gender: 'any' },
+      { name: 'Гангрена', gender: 'any' },
+      { name: 'Некроз', gender: 'any' },
+      { name: 'Фимоз', gender: 'male' },               // только у мужчин
+      { name: 'Парафимоз', gender: 'male' },           // только у мужчин
+      { name: 'Водянка', gender: 'any' },              // общее
+      { name: 'Асцит', gender: 'any' },
+      { name: 'Подагра', gender: 'any' },
+      { name: 'Ревматизм', gender: 'any' }
     ],
+
+
+
+
     inventory: [
       // Медицинские предметы (15)
       'Аптечка (полный набор медикаментов)',
@@ -2073,8 +2082,80 @@ const GAME_DATA = {
   }
 };
 
+
 // Степени тяжести для здоровья
 const HEALTH_SEVERITIES = ['легкая', 'средняя', 'тяжелая', 'критическая'];
+
+// ============ НОВЫЕ ФУНКЦИИ ДЛЯ ЗДОРОВЬЯ И СТАЖА (из первого файла) ============
+// Извлечение возраста из строки пола формата "Мужской (35 лет)"
+function extractAgeFromGender(genderString) {
+    if (!genderString) return 18;
+    const match = genderString.match(/\((\d+)\s*лет\)/);
+    return match ? parseInt(match[1]) : 18;
+}
+
+// Генерация стажа в зависимости от возраста по заданной таблице
+function generateExperienceByAge(age) {
+    if (age >= 18 && age <= 20) {
+        return 1;
+    } else if (age >= 21 && age <= 25) {
+        return Math.floor(Math.random() * 2) + 1; // 1-2
+    } else if (age >= 26 && age <= 30) {
+        return Math.floor(Math.random() * 4) + 2; // 2-5
+    } else if (age >= 31 && age <= 36) {
+        return Math.floor(Math.random() * 5) + 4; // 4-8
+    } else if (age >= 37 && age <= 45) {
+        return Math.floor(Math.random() * 11) + 5; // 5-15
+    } else if (age >= 46 && age <= 50) {
+        return Math.floor(Math.random() * 18) + 5; // 5-22
+    } else { // 51 и старше
+        return Math.floor(Math.random() * 25) + 6; // 6-30
+    }
+}
+
+// Определение пола из строки
+function getGenderFromString(genderString) {
+    if (genderString.startsWith('Мужской')) return 'male';
+    if (genderString.startsWith('Женский')) return 'female';
+    return 'unknown';
+}
+
+// Проверка, подходит ли болезнь для данного пола
+function isDiseaseAllowedForGender(diseaseName, gender) {
+    // Находим запись болезни в GAME_DATA.characteristics.health
+    const healthEntry = GAME_DATA.characteristics.health.find(h => h.name === diseaseName);
+    if (!healthEntry) return true; // если не нашли, разрешаем (по умолчанию)
+    if (healthEntry.gender === 'any') return true;
+    return healthEntry.gender === gender;
+}
+
+// Генерация здоровья с учётом пола
+function getRandomHealth(gender = 'any') {
+  const allHealth = GAME_DATA.characteristics.health;
+  const filtered = allHealth.filter(h => {
+    if (!h.gender || h.gender === 'any') return true;
+    if (gender === 'male' && h.gender === 'male') return true;
+    if (gender === 'female' && h.gender === 'female') return true;
+    return false;
+  });
+  const healthBase = filtered[Math.floor(Math.random() * filtered.length)];
+  if (healthBase.name === 'Здоров') {
+    return 'Здоров';
+  }
+  const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+  return `${healthBase.name} (${severity})`;
+}
+
+function getRandomSeverity() {
+  return HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+}
+
+function extractHealthName(healthString) {
+  const match = healthString.match(/^([^(]+)/);
+  return match ? match[1].trim() : healthString;
+}
+
+// ========================================================
 
 function parseHealthValue(healthString) {
   if (!healthString || healthString === 'Здоров') {
@@ -2087,7 +2168,6 @@ function parseHealthValue(healthString) {
 
   for (const part of parts) {
     // Ищем формат "Болезнь (степень)"
-    // Регулярное выражение ищет название болезни и степень в скобках
     const match = part.match(/^(.+?)\s*\((\w+)\)$/);
     if (match) {
       diseases.push({
@@ -2095,8 +2175,6 @@ function parseHealthValue(healthString) {
         severity: match[2]
       });
     } else {
-      // Если нет скобок, это может быть результат неправильного парсинга
-      // Пробуем извлечь болезнь из строки
       const simpleMatch = part.match(/^([^\(]+)/);
       if (simpleMatch) {
         diseases.push({
@@ -2117,112 +2195,8 @@ function formatHealthValue(diseases) {
 
   return diseases.map(d => `${d.name} (${d.severity})`).join(', ');
 }
+
 // ========================================================
-
-// Функция генерации игрока
-// Функция генерации игрока (ПОЛНАЯ ЗАЩИТА ОТ ДУБЛИКАТОВ)
-function generatePlayer(name, socketId) {
-  // Копии всех массивов для безопасного выбора
-  const availableGenders = [...GAME_DATA.characteristics.genders];
-  const availableBodyTypes = [...GAME_DATA.characteristics.bodyTypes];
-  const availableTraits = [...GAME_DATA.characteristics.traits];
-  const availableProfessions = [...GAME_DATA.characteristics.professions]; // копия объектов!
-  const availableHobbies = [...GAME_DATA.characteristics.hobbies];
-  const availableHealth = [...GAME_DATA.characteristics.health]; // копия объектов!
-  const availableInventory = [...GAME_DATA.characteristics.inventory];
-  const availablePhobias = [...GAME_DATA.characteristics.phobias];
-  const availableExtras = [...GAME_DATA.characteristics.extras];
-
-  // Функция для получения случайного индекса с удалением элемента
-  function takeRandomFromArray(array) {
-    if (array.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * array.length);
-    return array.splice(randomIndex, 1)[0];
-  }
-
-  // Пол и возраст
-  const gender = takeRandomFromArray(availableGenders);
-  const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
-
-  // Телосложение
-  const bodyType = takeRandomFromArray(availableBodyTypes);
-
-  // Черта характера
-  const trait = takeRandomFromArray(availableTraits);
-
-  // Профессия (объект)
-  const professionObj = takeRandomFromArray(availableProfessions);
-  const experience = Math.floor(Math.random() * 30) + 1;
-  const professionValue = `${professionObj.name} (стаж ${experience} лет)`;
-
-  // Хобби
-  const hobby = takeRandomFromArray(availableHobbies);
-
-  // Здоровье (объект)
-  const healthObj = takeRandomFromArray(availableHealth);
-  let healthValue;
-  if (healthObj.name === 'Здоров') {
-    healthValue = 'Здоров';
-  } else {
-    const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
-    healthValue = `${healthObj.name} (${severity})`;
-  }
-
-  // Инвентарь
-  const inventory = takeRandomFromArray(availableInventory);
-
-  // Фобия
-  const phobia = takeRandomFromArray(availablePhobias);
-
-  // Доп. сведения
-  const extra = takeRandomFromArray(availableExtras);
-
-  // Создаём игрока (ВСЕ ЗНАЧЕНИЯ УНИКАЛЬНЫ)
-  const player = {
-    id: uuidv4(),
-    socketId,
-    name,
-    characteristics: {
-      gender: { value: `${gender} (${age} лет)`, revealed: false },
-      bodyType: { value: bodyType, revealed: false },
-      trait: { value: trait, revealed: false },
-      profession: { value: professionValue, revealed: false },
-      hobby: { value: hobby, revealed: false },
-      health: { value: healthValue, revealed: false },
-      inventory: { value: inventory, revealed: false },
-      phobia: { value: phobia, revealed: false },
-      extra: { value: extra, revealed: false }
-    }
-  };
-
-  playersDataMap.set(player.id, player);
-  saveData();
-
-  return player;
-}
-
-// ============ НОВЫЕ ФУНКЦИИ ДЛЯ ЗДОРОВЬЯ ============
-function getRandomHealth() {
-  const healthBase = GAME_DATA.characteristics.health[Math.floor(Math.random() * GAME_DATA.characteristics.health.length)];
-  if (healthBase.name === 'Здоров') {
-    return 'Здоров';
-  }
-  const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
-  return `${healthBase.name} (${severity})`;
-}
-
-function getRandomSeverity() {
-  return HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
-}
-
-function extractHealthName(healthString) {
-  const match = healthString.match(/^([^(]+)/);
-  return match ? match[1].trim() : healthString;
-}
-// ====================================================
-
-
-
 
 function adjustDiseaseSeverity(healthString, delta) {
   console.log(`[adjust] Вход: healthString="${healthString}", delta=${delta}`);
@@ -2240,11 +2214,9 @@ function adjustDiseaseSeverity(healthString, delta) {
 
   console.log(`[adjust] Текущая степень: "${currentSeverity}", индекс: ${currentIndex}`);
 
-  // Если степень не найдена в списке – возможно, она хранится без скобок (только название)
   if (currentIndex === -1) {
     console.log('[adjust] Степень не распознана! Принудительно устанавливаем "легкая"');
     disease.severity = 'легкая';
-    // Пересчитываем индекс
     const newCurrentIndex = 0;
     let newIndex = newCurrentIndex + delta;
     console.log(`[adjust] Новый индекс после исправления: ${newIndex}`);
@@ -2274,17 +2246,113 @@ function adjustDiseaseSeverity(healthString, delta) {
   return result;
 }
 
+// ============ Функция генерации игрока (с защитой от дубликатов, привязкой стажа к возрасту, фильтрацией по полу) ============
+function generatePlayer(name, socketId) {
+  // Массивы-источники
+  const sourceGenders = GAME_DATA.characteristics.genders;
+  const sourceBodyTypes = GAME_DATA.characteristics.bodyTypes;
+  const sourceTraits = GAME_DATA.characteristics.traits;
+  const sourceProfessions = GAME_DATA.characteristics.professions;
+  const sourceHobbies = GAME_DATA.characteristics.hobbies;
+  const sourceHealth = GAME_DATA.characteristics.health;
+  const sourceInventory = GAME_DATA.characteristics.inventory;
+  const sourcePhobias = GAME_DATA.characteristics.phobias;
+  const sourceExtras = GAME_DATA.characteristics.extras;
 
+  const usedValues = []; // здесь будем хранить все уже выбранные значения
 
+  // Вспомогательная функция для выбора случайного элемента из массива,
+  // исключая элементы, присутствующие в usedValues
+  function pickRandom(array, nameExtractor = (item) => item) {
+    const filtered = array.filter(item => !usedValues.includes(nameExtractor(item)));
+    if (filtered.length === 0) {
+      console.warn('Не осталось уникальных значений, выбираем случайное из исходных');
+      const randomIndex = Math.floor(Math.random() * array.length);
+      return array[randomIndex];
+    }
+    const randomIndex = Math.floor(Math.random() * filtered.length);
+    return filtered[randomIndex];
+  }
 
+  // Пол и возраст
+  const gender = pickRandom(sourceGenders);
+  const age = Math.floor(Math.random() * (80 - 20 + 1)) + 20; // возраст 20–80
+  usedValues.push(gender);
 
+  // Телосложение
+  const bodyType = pickRandom(sourceBodyTypes);
+  usedValues.push(bodyType);
 
+  // Черта характера
+  const trait = pickRandom(sourceTraits);
+  usedValues.push(trait);
 
+  // Профессия (объект)
+  const professionObj = pickRandom(sourceProfessions, (p) => p.name);
+  const experience = generateExperienceByAge(age);
+  const professionValue = `${professionObj.name} (стаж ${experience} лет)`;
+  usedValues.push(professionObj.name);
 
+  // Хобби
+  const hobby = pickRandom(sourceHobbies);
+  usedValues.push(hobby);
 
+  // Инвентарь
+  const inventory = pickRandom(sourceInventory);
+  usedValues.push(inventory);
+
+  // Фобия
+  const phobia = pickRandom(sourcePhobias);
+  usedValues.push(phobia);
+
+  // Доп. сведения
+  const extra = pickRandom(sourceExtras);
+  usedValues.push(extra);
+
+  // Здоровье с учётом пола
+  const playerGender = gender; // 'Мужской' или 'Женский'
+  const pureGender = getGenderFromString(playerGender);
+  const filteredHealth = sourceHealth.filter(h => {
+    if (!h.gender || h.gender === 'any') return true;
+    if (pureGender === 'male' && h.gender === 'male') return true;
+    if (pureGender === 'female' && h.gender === 'female') return true;
+    return false;
+  });
+  const healthObj = pickRandom(filteredHealth, (h) => h.name);
+  let healthValue;
+  if (healthObj.name === 'Здоров') {
+    healthValue = 'Здоров';
+  } else {
+    const severity = HEALTH_SEVERITIES[Math.floor(Math.random() * HEALTH_SEVERITIES.length)];
+    healthValue = `${healthObj.name} (${severity})`;
+  }
+  usedValues.push(healthObj.name);
+
+  // Формируем игрока
+  const player = {
+    id: uuidv4(),
+    socketId,
+    name,
+    characteristics: {
+      gender: { value: `${gender} (${age} лет)`, revealed: false },
+      bodyType: { value: bodyType, revealed: false },
+      trait: { value: trait, revealed: false },
+      profession: { value: professionValue, revealed: false },
+      hobby: { value: hobby, revealed: false },
+      health: { value: healthValue, revealed: false },
+      inventory: { value: inventory, revealed: false },
+      phobia: { value: phobia, revealed: false },
+      extra: { value: extra, revealed: false }
+    }
+  };
+
+  playersDataMap.set(player.id, player);
+  saveData();
+
+  return player;
+}
 
 // ============ НОВЫЕ ФУНКЦИИ ДЛЯ ХАРАКТЕРИСТИК ============
-// ============ ФУНКЦИЯ ДЛЯ ХАРАКТЕРИСТИК (ПОЛНАЯ ЗАЩИТА ОТ ДУБЛИКАТОВ) ============
 function getRandomValue(charKey, player, excludeAllOthers = true) {
   console.log(`getRandomValue called for ${charKey}, player: ${player.name}`);
 
@@ -2312,16 +2380,12 @@ function getRandomValue(charKey, player, excludeAllOthers = true) {
   const usedValues = [];
 
   if (excludeAllOthers) {
-    // Добавляем значения из всех характеристик, кроме текущей
     Object.entries(player.characteristics).forEach(([key, char]) => {
       if (key !== charKey && char.value && char.value !== '—') {
-        // Для профессии, здоровья и инвентаря может быть особый формат
         if (key === 'profession') {
-          // Извлекаем название профессии из строки "Хирург (стаж 5 лет)"
           const profMatch = char.value.match(/^([^(]+)/);
           if (profMatch) usedValues.push(profMatch[1].trim());
         } else if (key === 'health' && char.value !== 'Здоров') {
-          // Извлекаем название болезни из строки "Грипп (тяжелая)"
           const healthMatch = char.value.match(/^([^(]+)/);
           if (healthMatch) usedValues.push(healthMatch[1].trim());
         } else {
@@ -2331,42 +2395,39 @@ function getRandomValue(charKey, player, excludeAllOthers = true) {
     });
   }
 
-  // Фильтруем доступные значения
   let availableValues;
 
   if (charKey === 'profession') {
-    // Для профессий фильтруем по названию
     availableValues = sourceArray.filter(prof => {
       return !usedValues.some(used => used === prof.name);
     });
   } else if (charKey === 'health') {
-    // Для здоровья фильтруем по названию болезни
+    // Фильтруем с учётом пола
+    const gender = getGenderFromString(player.characteristics.gender.value);
     availableValues = sourceArray.filter(health => {
-      if (health.name === 'Здоров') return true; // Здоров можно оставить
+      if (health.name === 'Здоров') return true;
+      if (!isDiseaseAllowedForGender(health.name, gender)) return false;
       return !usedValues.some(used => used === health.name);
     });
   } else {
-    // Для простых массивов строк
     availableValues = sourceArray.filter(val => !usedValues.includes(val));
   }
 
-  // Если после фильтрации ничего не осталось, создаём копию всего массива
   if (availableValues.length === 0) {
     console.warn(`Нет уникальных значений для ${charKey}, создаём копию`);
     availableValues = [...sourceArray];
   }
 
-  // Выбираем случайное значение
   const randomIndex = Math.floor(Math.random() * availableValues.length);
   let newValue = availableValues[randomIndex];
 
-  // Форматируем в зависимости от типа характеристики
   if (charKey === 'profession') {
     const prof = newValue;
-    const experience = Math.floor(Math.random() * 20) + 1;
+    const age = extractAgeFromGender(player.characteristics.gender.value);
+    const experience = generateExperienceByAge(age);
     newValue = `${prof.name} (стаж ${experience} лет)`;
   } else if (charKey === 'gender') {
-    const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
+    const age = extractAgeFromGender(player.characteristics.gender.value) || Math.floor(Math.random() * (80 - 18 + 1)) + 18;
     newValue = `${newValue} (${age} лет)`;
   } else if (charKey === 'health') {
     if (newValue.name === 'Здоров') {
@@ -2383,7 +2444,6 @@ function getRandomValue(charKey, player, excludeAllOthers = true) {
 function parseCharacteristicValue(charKey, value) {
   console.log(`parseCharacteristicValue for ${charKey}: ${value}`);
 
-  // Характеристики, которые не могут иметь несколько значений
   const singleValueKeys = ['profession', 'gender', 'health'];
 
   if (singleValueKeys.includes(charKey)) {
@@ -2488,9 +2548,6 @@ function cancelVoting(gameId) {
   return true;
 }
 
-
-
-
 const ABILITY_LIST = [
   "Оперативное вмешательство: изменить степень тяжести любой болезни у одного игрока на 1 (улучшить или ухудшить)",
   "Общая диагностика: раскрыть состояние здоровья любого игрока",
@@ -2534,14 +2591,9 @@ const ABILITY_LIST = [
   "Ключ: добавляет себе в инвентарь ключ от сейфа",
   "Роковая связь: добавляет себе ВИЧ заболевание (тяжелая) и заражает выбранного игрока им же",
   "На всякий случай: добавляет себе в инвентарь пистолет с 12 патронами",
-  
-
+  "Месть: раскрывает местоположение вашего бункера соседним, из-за чего на вас регулярно совершаются набеги и необходимо защищаться",
+  "Критическая неудача: в бункере случилось обрушение несущей стены, количество мест для выживших уменьшилось на 1",
 ];
-
-// =======================================================
-
-
-
 
 // ============ API МАРШРУТ ДЛЯ ГЕНЕРАЦИИ ============
 app.post('/api/add-event', (req, res) => {
@@ -2583,19 +2635,14 @@ app.get('/api/events/:gameId', (req, res) => {
   res.json({ events: game.events || [] });
 });
 
-
-
-
 function buildFinalPrompt(game) {
-  // Данные катастрофы и бункера
   let prompt = `Сгенерируй финал игры "Бункер" в виде хронологии выживания по годам.\n\n`;
   prompt += `КАТАСТРОФА:\n${game.disaster}\n\n`;
   prompt += `БУНКЕР:\nСрок: ${game.bunker.duration_years} лет, Еда: на ${game.bunker.food_years} лет\n${game.bunker.extra}\n\n`;
 
-  // Информация об игроках (только раскрытые характеристики)
   prompt += `ИГРОКИ (только раскрытая информация):\n`;
   game.players.forEach(player => {
-    if (player.status === 'kicked' || player.status === 'dead') return; // мёртвые/изгнанные не участвуют в финале? обычно финал для оставшихся
+    if (player.status === 'kicked' || player.status === 'dead') return;
     const revealed = [];
     Object.entries(player.characteristics).forEach(([key, char]) => {
       if (char.revealed) {
@@ -2619,7 +2666,6 @@ function buildFinalPrompt(game) {
 
   return prompt;
 }
-
 
 app.post('/api/generate-final', async (req, res) => {
   try {
@@ -2646,7 +2692,6 @@ app.post('/api/generate-final', async (req, res) => {
         }
       } catch (error) {
         console.error(`[FINAL] Model ${model} error:`, error.message);
-        // Небольшая задержка перед следующей моделью
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -2660,39 +2705,7 @@ app.post('/api/generate-final', async (req, res) => {
     console.error('❌ Ошибка генерации финала:', error);
     res.status(500).json({ error: error.message });
   }
-
-
-
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Socket.IO
 io.on('connection', (socket) => {
@@ -2884,7 +2897,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Создаём игру
       const gameId = uuidv4();
       console.log(`[startGame] Создаём игру ${gameId}`);
 
@@ -2892,7 +2904,7 @@ io.on('connection', (socket) => {
         id: gameId,
         disaster: GAME_DATA.disasters[Math.floor(Math.random() * GAME_DATA.disasters.length)],
         bunker: GAME_DATA.bunkers[Math.floor(Math.random() * GAME_DATA.bunkers.length)],
-        players: lobby.players, // ссылка на тех же игроков
+        players: lobby.players,
         status: 'active',
         created: Date.now(),
         lobbyId: lobbyId,
@@ -2909,15 +2921,13 @@ io.on('connection', (socket) => {
         const randomIndex = Math.floor(Math.random() * game.players.length);
         const luckyPlayer = game.players[randomIndex];
         luckyPlayer.characteristics.health.value = 'Здоров';
-        // Обновляем в постоянном хранилище
         const savedPlayer = playersDataMap.get(luckyPlayer.id);
         if (savedPlayer) {
           savedPlayer.characteristics.health.value = 'Здоров';
         }
-        console.log(`[startGame] Установлено здоровье для ${luckyPlayer.name} (был единственным здоровым)`);
+        console.log(`[startGame] Установлено здоровье для ${luckyPlayer.name} (гарантия здорового)`);
       }
 
-      // Инициализируем ресурсы бункера из инвентарей игроков
       if (typeof initializeBunkerResources === 'function') {
         initializeBunkerResources(game);
         console.log(`[startGame] Ресурсы бункера: ${game.bunkerResources.length} предметов`);
@@ -2925,7 +2935,6 @@ io.on('connection', (socket) => {
         console.warn('[startGame] initializeBunkerResources не определена');
       }
 
-      // Раздача уникальных скрытых возможностей
       if (Array.isArray(ABILITY_LIST) && ABILITY_LIST.length > 0) {
         const shuffledAbilities = [...ABILITY_LIST].sort(() => Math.random() - 0.5);
         game.players.forEach((player, index) => {
@@ -2945,17 +2954,14 @@ io.on('connection', (socket) => {
         });
       }
 
-      // Сохраняем игру
       games.set(gameId, game);
       lobby.status = 'game_started';
       lobby.gameId = gameId;
 
-      // Обновляем карту игроков
       game.players.forEach(player => {
         playerGameMap.set(player.id, gameId);
       });
 
-      // Отправляем уведомления всем игрокам
       game.players.forEach(player => {
         const playerSocket = io.sockets.sockets.get(player.socketId);
         if (playerSocket) {
@@ -2975,7 +2981,6 @@ io.on('connection', (socket) => {
         });
       });
 
-      // Сохраняем данные
       try {
         await saveData();
         console.log(`[startGame] Данные сохранены для игры ${gameId}`);
@@ -2991,8 +2996,6 @@ io.on('connection', (socket) => {
       socket.emit('error', 'Внутренняя ошибка сервера при запуске игры');
     }
   });
-
-
 
   socket.on('getGameData', ({ gameId }) => {
     const game = games.get(gameId);
@@ -3074,7 +3077,6 @@ io.on('connection', (socket) => {
     }
     player.secretAbility.activated = true;
 
-    // Добавляем событие в ленту
     if (!game.events) game.events = [];
     const eventText = `🃏 ${player.name} активировал скрытую возможность: ${player.secretAbility.value}`;
     const event = {
@@ -3106,7 +3108,6 @@ io.on('connection', (socket) => {
       savedPlayer.characteristics[characteristic].revealed = true;
     }
 
-    // Если раскрыли инвентарь, добавляем предметы в ресурсы бункера
     if (characteristic === 'inventory' && game.bunkerResources) {
       const items = parseCharacteristicValue('inventory', player.characteristics.inventory.value);
       const allItems = [items.main, ...items.items].filter(i => i && i !== '—');
@@ -3246,8 +3247,6 @@ io.on('connection', (socket) => {
     console.log(`В игре ${gameId} права создателя переданы от ${initiator.name} к ${newCreator.name}`);
   });
 
-
-
   socket.on('rerollAllCharacteristics', ({ gameId }) => {
     try {
       console.log(`[rerollAll] Запрос от создателя на ПЕРЕГЕНЕРАЦИЮ ВСЕХ характеристик (раскрытые остаются раскрытыми) для игры ${gameId}`);
@@ -3264,27 +3263,21 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Перебираем всех игроков
       game.players.forEach(player => {
-        // Сохраняем текущие флаги раскрытия
         const oldRevealed = {};
         Object.keys(player.characteristics).forEach(key => {
           oldRevealed[key] = player.characteristics[key].revealed;
         });
 
-        // Перебираем все характеристики и генерируем новые значения
         Object.keys(player.characteristics).forEach(charKey => {
           const char = player.characteristics[charKey];
-          // Генерируем новое значение (учитывая уникальность среди текущих характеристик этого игрока)
           const newValue = getRandomValue(charKey, player, true);
           if (newValue) {
             char.value = newValue;
           }
-          // Восстанавливаем флаг раскрытия (оставляем как было)
           char.revealed = oldRevealed[charKey];
         });
 
-        // Обновляем сохранённые данные игрока
         const savedPlayer = playersDataMap.get(player.id);
         if (savedPlayer) {
           Object.keys(savedPlayer.characteristics).forEach(charKey => {
@@ -3294,12 +3287,10 @@ io.on('connection', (socket) => {
         }
       });
 
-      // Пересчитываем ресурсы бункера (инвентари могли измениться)
       if (game.bunkerResources) {
         initializeBunkerResources(game);
       }
 
-      // Добавляем событие в ленту
       if (!game.events) game.events = [];
       const event = {
         id: uuidv4(),
@@ -3309,11 +3300,8 @@ io.on('connection', (socket) => {
       game.events.unshift(event);
       io.to(gameId).emit('newEvent', event);
 
-      // Сохраняем игру
       games.set(gameId, game);
       saveData();
-
-      // Отправляем обновление всем
       emitGameUpdateFixed(gameId);
 
       console.log(`[rerollAll] Все характеристики успешно перегенерированы для игры ${gameId}`);
@@ -3322,8 +3310,6 @@ io.on('connection', (socket) => {
       socket.emit('error', 'Внутренняя ошибка сервера');
     }
   });
-
-
 
   // ============ ОБРАБОТЧИКИ ДЛЯ ЗДОРОВЬЯ ============
   socket.on('changeHealth', ({ gameId, playerId, action, diseaseName, severity }) => {
@@ -3347,11 +3333,12 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const gender = getGenderFromString(targetPlayer.characteristics.gender.value);
     let newHealthValue;
 
     switch (action) {
       case 'random':
-        newHealthValue = getRandomHealth();
+        newHealthValue = getRandomHealth(gender);
         break;
 
       case 'select':
@@ -3362,6 +3349,10 @@ io.on('connection', (socket) => {
         if (diseaseName === 'Здоров') {
           newHealthValue = 'Здоров';
         } else {
+          if (!isDiseaseAllowedForGender(diseaseName, gender)) {
+            socket.emit('error', 'Эта болезнь не подходит для пола игрока');
+            return;
+          }
           const sev = severity || getRandomSeverity();
           newHealthValue = `${diseaseName} (${sev})`;
         }
@@ -3372,14 +3363,16 @@ io.on('connection', (socket) => {
           socket.emit('error', 'Не выбрана болезнь');
           return;
         }
+        if (!isDiseaseAllowedForGender(diseaseName, gender)) {
+          socket.emit('error', 'Эта болезнь не подходит для пола игрока');
+          return;
+        }
 
         const currentDiseases = parseHealthValue(targetPlayer.characteristics.health.value);
-
         currentDiseases.push({
           name: diseaseName,
           severity: severity || getRandomSeverity()
         });
-
         newHealthValue = formatHealthValue(currentDiseases);
         break;
 
@@ -3436,11 +3429,6 @@ io.on('connection', (socket) => {
     console.log(`Создатель удалил болезнь у игрока ${targetPlayer.name}`);
   });
 
-
-
-
-
-
   socket.on('attemptHeal', ({ gameId, playerId, experience }) => {
     try {
       console.log('attemptHeal called:', { gameId, playerId, experience });
@@ -3480,7 +3468,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Определяем исходы в зависимости от стажа (таблица вероятностей)
       let outcomes = [];
       if (exp >= 25 && exp <= 30) {
         outcomes = [
@@ -3524,7 +3511,6 @@ io.on('connection', (socket) => {
         ];
       }
 
-
       const totalChance = outcomes.reduce((acc, o) => acc + o.chance, 0);
       const roll = Math.random() * totalChance;
       let cumulative = 0;
@@ -3548,16 +3534,15 @@ io.on('connection', (socket) => {
         resultMessage = `❌ Ухудшение на 1 степень! (Стаж ${exp} лет)`;
       }
 
-      // Отправляем результат всем игрокам (без изменения данных)
       io.to(gameId).emit('healAttemptResult', {
         playerName: targetPlayer.name,
         initiatorName: initiator.name,
         message: resultMessage,
-        success: selectedOutcome.name !== 'up1', // для визуала (успех/неудача)
-        died: false, // смерть теперь не автоматическая
+        success: selectedOutcome.name !== 'up1',
+        died: false,
         outcome: selectedOutcome.name,
         experience: exp,
-        delta: selectedOutcome.delta // добавим, чтобы креатор знал, на сколько менять
+        delta: selectedOutcome.delta
       });
 
       console.log(`Лечение (только результат): ${initiator.name} -> ${targetPlayer.name}: ${resultMessage}`);
@@ -3567,8 +3552,6 @@ io.on('connection', (socket) => {
       socket.emit('error', 'Внутренняя ошибка сервера при лечении');
     }
   });
-
-
 
   // ============ ОБРАБОТЧИКИ ДЛЯ ХАРАКТЕРИСТИК ============
   socket.on('changeCharacteristic', ({ gameId, playerId, characteristic, action, value, index }) => {
@@ -3592,13 +3575,15 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const age = extractAgeFromGender(targetPlayer.characteristics.gender.value);
+    const gender = getGenderFromString(targetPlayer.characteristics.gender.value);
+
     const currentValue = targetPlayer.characteristics[characteristic].value;
     const parsed = parseCharacteristicValue(characteristic, currentValue);
     let newValue;
 
     switch (action) {
       case 'random':
-        // Передаём весь объект игрока для проверки уникальности
         newValue = getRandomValue(characteristic, targetPlayer, true);
         break;
 
@@ -3608,7 +3593,6 @@ io.on('connection', (socket) => {
           return;
         }
 
-        // Проверяем уникальность выбранного значения
         const usedValues = [];
         Object.entries(targetPlayer.characteristics).forEach(([key, char]) => {
           if (key !== characteristic && char.value && char.value !== '—') {
@@ -3632,7 +3616,7 @@ io.on('connection', (socket) => {
         if (characteristic === 'profession') {
           const prof = GAME_DATA.characteristics.professions.find(p => p.name === value);
           if (prof) {
-            const experience = Math.floor(Math.random() * 20) + 1;
+            const experience = generateExperienceByAge(age);
             newValue = `${prof.name} (стаж ${experience} лет)`;
           } else {
             newValue = value;
@@ -3641,6 +3625,10 @@ io.on('connection', (socket) => {
           if (value === 'Здоров') {
             newValue = 'Здоров';
           } else {
+            if (!isDiseaseAllowedForGender(value, gender)) {
+              socket.emit('error', 'Эта болезнь не подходит для пола игрока');
+              return;
+            }
             const severity = getRandomSeverity();
             newValue = `${value} (${severity})`;
           }
@@ -3655,7 +3643,6 @@ io.on('connection', (socket) => {
           return;
         }
 
-        // При добавлении проверяем на совпадение с уже имеющимися
         const allCurrentValues = [parsed.main, ...parsed.items].filter(v => v && v !== '—');
         if (allCurrentValues.includes(value)) {
           socket.emit('error', 'Это значение уже есть в характеристике');
@@ -3706,7 +3693,6 @@ io.on('connection', (socket) => {
 
     targetPlayer.characteristics[characteristic].value = newValue;
 
-    // Если изменили инвентарь, обновляем ресурсы бункера
     if (characteristic === 'inventory' && game.bunkerResources) {
       initializeBunkerResources(game);
     }
@@ -3717,10 +3703,6 @@ io.on('connection', (socket) => {
 
     console.log(`Создатель изменил характеристику ${characteristic} игрока ${targetPlayer.name}`);
   });
-
-
-
-
 
   // Обновление катастрофы
   socket.on('updateDisaster', ({ gameId, disaster }) => {
@@ -3766,7 +3748,6 @@ io.on('connection', (socket) => {
     io.to(gameId).emit('bunkerUpdated', { bunker, totalSlots });
     console.log(`Создатель ${initiator.name} обновил бункер в игре ${gameId}`);
   });
-
 
   // ============ ОБРАБОТЧИКИ ДЛЯ ГОЛОСОВАНИЯ ============
   socket.on('startVoting', ({ gameId }) => {
