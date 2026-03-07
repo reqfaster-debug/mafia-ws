@@ -1234,6 +1234,8 @@ const GAME_DATA = {
       { name: 'Здоров', gender: 'any' },
       { name: 'Здоров', gender: 'any' },
       { name: 'Здоров', gender: 'any' },
+      { name: 'Здоров', gender: 'female' },
+      { name: 'Здоров', gender: 'male' },
       { name: 'Анемия', gender: 'any' },
       { name: 'Авитаминоз', gender: 'any' },
 
@@ -1360,6 +1362,7 @@ const GAME_DATA = {
 
       // ========== ГИНЕКОЛОГИЯ / УРОЛОГИЯ ==========
       { name: 'Эндометриоз', gender: 'female' },
+      { name: 'Здорова, но беременна', gender: 'female' },
       { name: 'Миома матки', gender: 'female' },
       { name: 'Киста яичника', gender: 'female' },
       { name: 'Полип', gender: 'any' },                // может быть в разных местах
@@ -1426,7 +1429,7 @@ const GAME_DATA = {
 
       // ========== ПРОЧИЕ ==========
       { name: 'Радиационное поражение', gender: 'any' },
-      { name: 'Лучевая болезнь', gender: 'any' },   
+      { name: 'Лучевая болезнь', gender: 'any' },
       { name: 'Сепсис', gender: 'any' },
       { name: 'Гангрена', gender: 'any' },
       { name: 'Некроз', gender: 'any' },
@@ -1950,7 +1953,7 @@ const GAME_DATA = {
       'Чайлдфри',
 
 
-      // УСТРАШАЮЩИЕ (15 шт)
+      // УСТРАШАЮЩИЕ (15 шт)      
       'Каннибал',
       'Садист',
       'Психопат',
@@ -3817,28 +3820,28 @@ io.on('connection', (socket) => {
   });
 
   socket.on('rollDice', ({ gameId }) => {
-  try {
-    const game = games.get(gameId);
-    if (!game) {
-      socket.emit('error', 'Игра не найдена');
-      return;
+    try {
+      const game = games.get(gameId);
+      if (!game) {
+        socket.emit('error', 'Игра не найдена');
+        return;
+      }
+      const initiator = game.players.find(p => p.socketId === socket.id);
+      if (!initiator || initiator.id !== game.creator) {
+        socket.emit('error', 'Только создатель может бросать кубики');
+        return;
+      }
+      const result = Math.random() < 0.5; // true - повезло, false - не повезло
+      io.to(gameId).emit('diceResult', {
+        result,
+        initiatorName: initiator.name
+      });
+      console.log(`Создатель ${initiator.name} бросил кубики в игре ${gameId}, результат: ${result ? 'повезло' : 'не повезло'}`);
+    } catch (error) {
+      console.error('Ошибка при броске кубиков:', error);
+      socket.emit('error', 'Внутренняя ошибка сервера');
     }
-    const initiator = game.players.find(p => p.socketId === socket.id);
-    if (!initiator || initiator.id !== game.creator) {
-      socket.emit('error', 'Только создатель может бросать кубики');
-      return;
-    }
-    const result = Math.random() < 0.5; // true - повезло, false - не повезло
-    io.to(gameId).emit('diceResult', { 
-      result, 
-      initiatorName: initiator.name 
-    });
-    console.log(`Создатель ${initiator.name} бросил кубики в игре ${gameId}, результат: ${result ? 'повезло' : 'не повезло'}`);
-  } catch (error) {
-    console.error('Ошибка при броске кубиков:', error);
-    socket.emit('error', 'Внутренняя ошибка сервера');
-  }
-});
+  });
 
   socket.on('disconnect', () => {
     console.log('Отключение:', socket.id);
