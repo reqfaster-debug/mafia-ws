@@ -3817,6 +3817,30 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('rollDice', ({ gameId }) => {
+  try {
+    const game = games.get(gameId);
+    if (!game) {
+      socket.emit('error', 'Игра не найдена');
+      return;
+    }
+    const initiator = game.players.find(p => p.socketId === socket.id);
+    if (!initiator || initiator.id !== game.creator) {
+      socket.emit('error', 'Только создатель может бросать кубики');
+      return;
+    }
+    const result = Math.random() < 0.5; // true - повезло, false - не повезло
+    io.to(gameId).emit('diceResult', { 
+      result, 
+      initiatorName: initiator.name 
+    });
+    console.log(`Создатель ${initiator.name} бросил кубики в игре ${gameId}, результат: ${result ? 'повезло' : 'не повезло'}`);
+  } catch (error) {
+    console.error('Ошибка при броске кубиков:', error);
+    socket.emit('error', 'Внутренняя ошибка сервера');
+  }
+});
+
   socket.on('disconnect', () => {
     console.log('Отключение:', socket.id);
     const player = activePlayers.get(socket.id);
