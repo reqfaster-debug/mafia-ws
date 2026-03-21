@@ -2322,7 +2322,6 @@ app.post('/api/generate-final', async (req, res) => {
       return res.status(404).json({ error: 'Игра не найдена' });
     }
 
-    // Проверяем, не был ли уже сгенерирован финал
     if (game.finalGenerated) {
       return res.status(400).json({ error: 'Финал уже был сгенерирован. Обновите страницу, чтобы увидеть его.' });
     }
@@ -2352,28 +2351,26 @@ app.post('/api/generate-final', async (req, res) => {
       console.log('[FINAL] Using fallback text');
     }
 
-    // Помечаем, что финал сгенерирован
     game.finalGenerated = true;
-    games.set(gameId, game);
-    saveData(); // сохраняем состояние игры
 
-    // Отправляем финал всем игрокам
-    if (typeof gameId !== 'undefined') {
-      try {
-        console.log(`[FINAL] Отправка finalGenerated в комнату ${gameId}`);
-        let roomSize = 0;
-        try {
-          const room = io.sockets.adapter.rooms.get(gameId);
-          roomSize = room ? room.size : 0;
-        } catch (e) {
-          console.error('[FINAL] Ошибка при получении размера комнаты:', e);
-        }
-        console.log(`[FINAL] Размер комнаты ${gameId}: ${roomSize}`);
-        io.to(gameId).emit('finalGenerated', { final: finalText });
-      } catch (err) {
-        console.error('[FINAL] Критическая ошибка при отправке финала:', err);
-      }
-    }
+    // Добавляем событие в ленту
+    if (!game.events) game.events = [];
+    const finalEvent = {
+      id: uuidv4(),
+      text: `🏁 ФИНАЛ ИГРЫ:\n${finalText}`,
+      timestamp: Date.now(),
+      type: 'final'
+    };
+    game.events.unshift(finalEvent);
+    if (game.events.length > 20) game.events = game.events.slice(0, 20);
+
+    games.set(gameId, game);
+    saveData();
+
+    // Отправляем финал всем игрокам через сокет (модальное окно)
+    io.to(gameId).emit('finalGenerated', { final: finalText });
+    // Также отправляем новое событие для ленты
+    io.to(gameId).emit('newEvent', finalEvent);
 
     res.json({ success: true, final: finalText });
 
