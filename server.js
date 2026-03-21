@@ -46,10 +46,7 @@ app.options('*', cors(corsOptions));
 const io = socketIo(server, {
   cors: {
     origin: [
-      "http://a1230559.xsph.ru",
-      "https://a1230559.xsph.ru",
-      "http://calm-dolphin-0396cf.netlify.app",
-      "https://calm-dolphin-0396cf.netlify.app",
+      "http://o96894pc.beget.tech",
       "http://localhost"
     ],
     methods: ["GET", "POST"],
