@@ -2321,6 +2321,11 @@ app.post('/api/generate-final', async (req, res) => {
       return res.status(404).json({ error: 'Игра не найдена' });
     }
 
+    // Проверяем, не был ли уже сгенерирован финал
+    if (game.finalGenerated) {
+      return res.status(400).json({ error: 'Финал уже был сгенерирован. Обновите страницу, чтобы увидеть его.' });
+    }
+
     console.log(`🎬 Генерация финала для игры ${gameId}`);
 
     const prompt = buildFinalPrompt(game);
@@ -2346,18 +2351,29 @@ app.post('/api/generate-final', async (req, res) => {
       console.log('[FINAL] Using fallback text');
     }
 
-    // Отправляем финал всем игрокам через сокет
-    try {
-      console.log(`[FINAL] Отправка finalGenerated в комнату ${gameId}`);
-      const room = io.sockets.adapter.rooms.get(gameId);
-      const roomSize = room ? room.size : 0;
-      console.log(`[FINAL] Размер комнаты ${gameId}: ${roomSize}`);
-      io.to(gameId).emit('finalGenerated', { final: finalText });
-    } catch (err) {
-      console.error('[FINAL] Ошибка при отправке финала через сокет:', err);
+    // Помечаем, что финал сгенерирован
+    game.finalGenerated = true;
+    games.set(gameId, game);
+    saveData(); // сохраняем состояние игры
+
+    // Отправляем финал всем игрокам
+    if (typeof gameId !== 'undefined') {
+      try {
+        console.log(`[FINAL] Отправка finalGenerated в комнату ${gameId}`);
+        let roomSize = 0;
+        try {
+          const room = io.sockets.adapter.rooms.get(gameId);
+          roomSize = room ? room.size : 0;
+        } catch (e) {
+          console.error('[FINAL] Ошибка при получении размера комнаты:', e);
+        }
+        console.log(`[FINAL] Размер комнаты ${gameId}: ${roomSize}`);
+        io.to(gameId).emit('finalGenerated', { final: finalText });
+      } catch (err) {
+        console.error('[FINAL] Критическая ошибка при отправке финала:', err);
+      }
     }
 
-    // Отправляем HTTP-ответ
     res.json({ success: true, final: finalText });
 
   } catch (error) {
@@ -2569,7 +2585,8 @@ io.on('connection', (socket) => {
         lobbyId: lobbyId,
         creator: lobby.creator,
         totalSlots: calculateBunkerSlots(lobby.players.length),
-        bunkerResources: []
+        bunkerResources: [],
+        finalGenerated: false
       };
 
       console.log(`[startGame] Игроков в игре: ${game.players.length}`);
