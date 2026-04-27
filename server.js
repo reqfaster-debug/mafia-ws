@@ -291,10 +291,21 @@ if (!OPENROUTER_API_KEY) {
 
 // Модели для разных целей
 const STORY_MODELS = [
+  // Most stable
   'google/gemini-2.0-flash-001',
-  'openrouter/free'
-];
+  'deepseek/deepseek-chat-v3-0324:free',
+  'qwen/qwen-2.5-72b-instruct:free',
 
+  // Fastest
+  'google/gemini-2.0-flash-lite-001',
+  'microsoft/phi-4:free',
+  'qwen/qwen-2.5-7b-instruct:free',
+
+  // Best for storytelling / RP
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'nousresearch/hermes-3-llama-3.1-8b:free',
+  'mistralai/mistral-small-3.1-24b-instruct:free'
+];
 
 // Функция для вызова нейросети с таймаутом
 async function callModelWithTimeout(model, prompt, timeoutMs = 20000) {
